@@ -1,8 +1,17 @@
-import type { Client, Segment } from "./data";
+import type { Client } from "./data";
 
-// Lista clienti ufficiale fornita da Daniele (Dic 2026). Import idempotente: applicato una volta sola
-// tramite il flag __clientsImportV7 in store.ts/migrate.
+// Demo ScalaShop: import clienti reali rimosso. Nessun cliente viene precaricato.
+// Le firme di CLIENT_IMPORT_V7 e applyClientImportV7 sono mantenute per compatibilità.
 export const CLIENT_IMPORT_V7: { name: string; phones: string[]; segment: "inattivi"|"nuovi"|"occasionali"|"abituali"|"top" }[] = [
+  /* lista clienti reali rimossa per la demo */
+];
+
+export function applyClientImportV7(existing: Client[]): Client[] {
+  return existing;
+}
+
+// Lista originale rimossa — placeholder per silenziare il resto del file legacy sotto.
+const _LEGACY_ORIGINAL_DISABLED: { name: string; phones: string[]; segment: string }[] = [
   { name: "Filippo Bar stop", phones: ["+393284440262"], segment: "abituali" },
   { name: "Giulio Falso", phones: ["+393458381604"], segment: "abituali" },
   { name: "Lorenza Russo", phones: ["+393282717906"], segment: "inattivi" },

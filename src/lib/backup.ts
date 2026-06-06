@@ -45,7 +45,7 @@ export function downloadFile(filename: string, content: string, mime: string) {
 }
 
 export function downloadCsv(name: string, rows: Record<string, unknown>[], headers?: string[]) {
-  downloadFile(`sciorio-${name}-${todayStr()}.csv`, toCsv(rows, headers), "text/csv");
+  downloadFile(`scalashop-${name}-${todayStr()}.csv`, toCsv(rows, headers), "text/csv");
 }
 
 // ============ Builders per entità ============

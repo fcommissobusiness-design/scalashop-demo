@@ -8,42 +8,41 @@ type NavGroup = { label: string; items: NavItem[] };
 
 export const WIP_ROUTES = new Set<string>(["/produzione", "/food-safety", "/b2b", "/ecommerce"]);
 
+// Sezioni nascoste dalla navigazione nella demo ScalaShop (codice mantenuto, route ancora raggiungibili manualmente).
+const HIDDEN_ROUTES = new Set<string>([
+  "/b2b", "/produzione", "/food-safety", "/ecommerce",
+  "/fatture", "/finanza", "/fiscale", "/offerte",
+]);
+
 const NAV_GROUPS: NavGroup[] = [
   { label: "Operativo", items: [
     { to: "/", label: "Dashboard", short: "Dashboard" },
     { to: "/ordini", label: "Ordini", short: "Ordini" },
+    { to: "/pagamenti", label: "Scontrini", short: "Scontrini" },
     { to: "/consegne", label: "Consegne", short: "Consegne" },
     { to: "/clienti", label: "Clienti", short: "Clienti" },
-    { to: "/offerte", label: "Offerte", short: "Offerte" },
-    { to: "/b2b", label: "B2B", short: "B2B", wip: true },
   ]},
-  { label: "Magazzino e Prodotti", items: [
-    { to: "/magazzino", label: "Magazzino", short: "Magazzino" },
+  { label: "Magazzino", items: [
     { to: "/prodotti", label: "Prodotti", short: "Prodotti" },
+    { to: "/magazzino", label: "Magazzino", short: "Magazzino" },
     { to: "/entrate-merci", label: "Scarico Prodotti", short: "Scarico Prodotti" },
     { to: "/fornitori", label: "Fornitori", short: "Fornitori" },
-    { to: "/produzione", label: "Produzione", short: "Produzione", wip: true },
-    { to: "/food-safety", label: "Food Safety", short: "Food Safety", wip: true },
   ]},
-  { label: "Vendite Online", items: [
-    { to: "/ecommerce", label: "E-commerce", short: "E-commerce", wip: true },
-  ]},
-  { label: "Finanza e Amministrazione", items: [
+  { label: "Finanza", items: [
     { to: "/incassi", label: "Cassa", short: "Cassa" },
-    { to: "/fatture", label: "Fatture", short: "Fatture" },
-    { to: "/finanza", label: "Finanziario", short: "Finanziario" },
-    { to: "/fiscale", label: "Fiscalità", short: "Fiscalità" },
     { to: "/report", label: "Report", short: "Report" },
-    { to: "/cestino", label: "Cestino", short: "Cestino" },
-    { to: "/admin", label: "Amministrazione", short: "Amministrazione" },
   ]},
-];
+  { label: "Pannello", items: [
+    { to: "/cestino", label: "Cestino", short: "Cestino" },
+    { to: "/admin", label: "Pannello di Controllo", short: "Pannello" },
+  ]},
+].map(g => ({ ...g, items: g.items.filter(it => !HIDDEN_ROUTES.has(it.to)) }));
 
 const MOBILE_PRIMARY: NavItem[] = [
   { to: "/", label: "Dashboard", short: "Dashboard" },
   { to: "/ordini", label: "Ordini", short: "Ordini" },
+  { to: "/pagamenti", label: "Scontrini", short: "Scontrini" },
   { to: "/consegne", label: "Consegne", short: "Consegne" },
-  { to: "/clienti", label: "Clienti", short: "Clienti" },
   { to: "/incassi", label: "Cassa", short: "Cassa" },
 ];
 
@@ -68,8 +67,8 @@ function AuthScreen() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-brand-green text-brand-cream px-6">
-      <h1 className="font-display text-3xl text-brand-gold mb-1">Sciorio HQ</h1>
-      <p className="text-sm opacity-80 mb-8">Caseificio Sciorio dal 1947</p>
+      <h1 className="font-display text-3xl text-brand-gold mb-1">ScalaShop</h1>
+      <p className="text-sm opacity-80 mb-8 text-center">Gestionale semplice per food retail artigianale</p>
       <form onSubmit={submit} className="w-full max-w-xs space-y-3 bg-brand-green-dark/40 p-5 rounded-2xl">
         <div>
           <label className="text-[11px] uppercase tracking-wider opacity-80">Email</label>
@@ -91,7 +90,7 @@ function AuthScreen() {
         </button>
       </form>
       <p className="mt-6 text-[11px] opacity-60 max-w-xs text-center">
-        Le registrazioni sono chiuse. Usa le credenziali esistenti — lo stesso account sincronizza i dati su iPhone, PC e tablet.
+        Demo gratuita 14 giorni. Lo stesso account sincronizza ordini, clienti, cassa e magazzino su iPhone, PC e tablet.
       </p>
     </div>
   );
@@ -133,8 +132,8 @@ export function AppShell({ children }: { children: ReactNode }) {
       {/* Sidebar desktop */}
       <aside className="hidden md:flex md:flex-col w-60 bg-brand-green text-brand-cream sticky top-0 h-screen p-4 z-40 overflow-y-auto">
         <div className="px-2 py-3 mb-4 border-b border-brand-cream/10">
-          <h1 className="font-display text-2xl text-brand-gold leading-none">Sciorio HQ</h1>
-          <p className="text-[11px] opacity-70 mt-1">Caseificio dal 1947</p>
+          <h1 className="font-display text-2xl text-brand-gold leading-none">ScalaShop</h1>
+          <p className="text-[11px] opacity-70 mt-1">Food retail artigianale</p>
         </div>
         <nav className="flex flex-col gap-3">
           {NAV_GROUPS.map((g) => (
