@@ -2,6 +2,8 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useCloudSync, useSyncStatus } from "@/lib/cloudSync";
+import { OnboardingScreen, hasCompletedOnboarding } from "./OnboardingScreen";
+import logoAsset from "@/assets/scalashop-logo.png.asset.json";
 
 type NavItem = { to: string; label: string; short: string; wip?: boolean };
 type NavGroup = { label: string; items: NavItem[] };
@@ -66,9 +68,9 @@ function AuthScreen() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-brand-green text-brand-cream px-6">
-      <h1 className="font-display text-3xl text-brand-gold mb-1">ScalaShop</h1>
-      <p className="text-sm opacity-80 mb-8 text-center">Gestionale semplice per food retail artigianale</p>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-brand-cream text-brand-green px-6">
+      <img src={logoAsset.url} alt="ScalaShop" className="h-24 object-contain mb-2" />
+      <p className="text-sm text-muted-foreground mb-8 text-center">Gestionale semplice per food retail artigianale</p>
       <form onSubmit={submit} className="w-full max-w-xs space-y-3 bg-brand-green-dark/40 p-5 rounded-2xl">
         <div>
           <label className="text-[11px] uppercase tracking-wider opacity-80">Email</label>
@@ -142,9 +144,12 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="min-h-screen bg-brand-cream md:flex">
       {/* Sidebar desktop */}
       <aside className="hidden md:flex md:flex-col w-60 bg-brand-green text-brand-cream sticky top-0 h-screen p-4 z-40 overflow-y-auto">
-        <div className="px-2 py-3 mb-4 border-b border-brand-cream/10">
-          <h1 className="font-display text-2xl text-brand-gold leading-none">ScalaShop</h1>
-          <p className="text-[11px] opacity-70 mt-1">Food retail artigianale</p>
+        <div className="px-2 py-3 mb-4 border-b border-brand-cream/10 flex items-center gap-2">
+          <img src={logoAsset.url} alt="" className="h-9 w-9 object-contain rounded bg-white p-0.5" />
+          <div>
+            <h1 className="font-display text-xl text-brand-gold leading-none">ScalaShop</h1>
+            <p className="text-[10px] opacity-70 mt-0.5">Food retail artigianale</p>
+          </div>
         </div>
         <nav className="flex flex-col gap-3">
           {NAV_GROUPS.map((g) => (
