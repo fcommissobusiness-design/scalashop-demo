@@ -215,13 +215,8 @@ export function toProduct(p: ParsedProduct): Omit<Product, "id"> {
 /* ============ PDF text extraction (lazy) ============ */
 export async function extractPdfText(file: File): Promise<string> {
   const pdfjs: any = await import("pdfjs-dist");
-  try {
-    const workerUrl = (await import("pdfjs-dist/build/pdf.worker.min.mjs?url")).default;
-    pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
-  } catch {
-    // fallback: disable worker
-    pdfjs.GlobalWorkerOptions.workerSrc = "";
-  }
+  // Demo-friendly: niente worker esterno, parse inline (file di listino piccoli).
+  if (pdfjs.GlobalWorkerOptions) pdfjs.GlobalWorkerOptions.workerSrc = "";
   const buf = await file.arrayBuffer();
   const doc = await pdfjs.getDocument({ data: buf, disableWorker: true }).promise;
   let out = "";
