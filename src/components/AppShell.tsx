@@ -2,6 +2,8 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useCloudSync, useSyncStatus } from "@/lib/cloudSync";
+import { OnboardingScreen, hasCompletedOnboarding } from "./OnboardingScreen";
+import logoAsset from "@/assets/scalashop-logo.png.asset.json";
 
 type NavItem = { to: string; label: string; short: string; wip?: boolean };
 type NavGroup = { label: string; items: NavItem[] };
@@ -66,9 +68,9 @@ function AuthScreen() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-brand-green text-brand-cream px-6">
-      <h1 className="font-display text-3xl text-brand-gold mb-1">ScalaShop</h1>
-      <p className="text-sm opacity-80 mb-8 text-center">Gestionale semplice per food retail artigianale</p>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-brand-cream text-brand-green px-6">
+      <img src={logoAsset.url} alt="ScalaShop" className="h-24 object-contain mb-2" />
+      <p className="text-sm text-muted-foreground mb-8 text-center">Gestionale semplice per food retail artigianale</p>
       <form onSubmit={submit} className="w-full max-w-xs space-y-3 bg-brand-green-dark/40 p-5 rounded-2xl">
         <div>
           <label className="text-[11px] uppercase tracking-wider opacity-80">Email</label>
@@ -142,9 +144,12 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="min-h-screen bg-brand-cream md:flex">
       {/* Sidebar desktop */}
       <aside className="hidden md:flex md:flex-col w-60 bg-brand-green text-brand-cream sticky top-0 h-screen p-4 z-40 overflow-y-auto">
-        <div className="px-2 py-3 mb-4 border-b border-brand-cream/10">
-          <h1 className="font-display text-2xl text-brand-gold leading-none">ScalaShop</h1>
-          <p className="text-[11px] opacity-70 mt-1">Food retail artigianale</p>
+        <div className="px-2 py-3 mb-4 border-b border-brand-cream/10 flex items-center gap-2">
+          <img src={logoAsset.url} alt="" className="h-9 w-9 object-contain rounded bg-white p-0.5" />
+          <div>
+            <h1 className="font-display text-xl text-brand-gold leading-none">ScalaShop</h1>
+            <p className="text-[10px] opacity-70 mt-0.5">Food retail artigianale</p>
+          </div>
         </div>
         <nav className="flex flex-col gap-3">
           {NAV_GROUPS.map((g) => (
@@ -335,100 +340,5 @@ export function Fab({ onClick, label = "+" }: { onClick: () => void; label?: str
       className="fixed md:!bottom-8 right-4 md:right-8 w-14 h-14 rounded-full bg-brand-gold text-white text-3xl shadow-lg z-40 flex items-center justify-center font-light hover:scale-105 active:scale-95 transition-transform">
       {label}
     </button>
-  );
-}
-
-/* ============= Onboarding demo ============= */
-const ONB_KEY = "scalashop-onboarding";
-type OnbData = { businessName: string; businessType: string; doesDelivery: "si" | "no"; productsCount: string; completedAt: string };
-
-function hasCompletedOnboarding(userId: string): boolean {
-  if (typeof window === "undefined") return true;
-  try {
-    const raw = localStorage.getItem(`${ONB_KEY}:${userId}`);
-    return !!raw && !!JSON.parse(raw)?.completedAt;
-  } catch { return false; }
-}
-
-function OnboardingScreen({ userId, onDone }: { userId: string; onDone: () => void }) {
-  const [businessName, setBusinessName] = useState("");
-  const [businessType, setBusinessType] = useState("");
-  const [doesDelivery, setDoesDelivery] = useState<"si" | "no" | "">("");
-  const [productsCount, setProductsCount] = useState("");
-
-  const TYPES = ["Gastronomia", "Caseificio", "Salumeria", "Alimentari", "Bottega food", "Altro"];
-  const PRODS = ["Meno di 20", "20–50", "50–150", "Oltre 150"];
-
-  const canSubmit = businessName.trim().length > 1 && businessType && doesDelivery && productsCount;
-
-  const submit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!canSubmit) return;
-    const data: OnbData = {
-      businessName: businessName.trim(), businessType,
-      doesDelivery: doesDelivery as "si" | "no",
-      productsCount, completedAt: new Date().toISOString(),
-    };
-    try { localStorage.setItem(`${ONB_KEY}:${userId}`, JSON.stringify(data)); } catch {}
-    onDone();
-  };
-
-  return (
-    <div className="min-h-screen bg-brand-green text-brand-cream flex items-center justify-center px-4 py-8">
-      <form onSubmit={submit} className="w-full max-w-md bg-brand-green-dark/40 rounded-2xl p-6 space-y-5">
-        <div className="text-center">
-          <h1 className="font-display text-2xl text-brand-gold">Benvenuto in ScalaShop</h1>
-          <p className="text-xs opacity-80 mt-1">Due informazioni rapide per configurare la tua demo.</p>
-        </div>
-
-        <div>
-          <label className="text-[11px] uppercase tracking-wider opacity-80">Nome attività</label>
-          <input value={businessName} onChange={e => setBusinessName(e.target.value)} required
-            placeholder="Es. Bottega del Borgo"
-            className="w-full mt-1 px-3 py-2.5 rounded-lg bg-brand-cream text-brand-green outline-none" />
-        </div>
-
-        <div>
-          <label className="text-[11px] uppercase tracking-wider opacity-80">Tipologia attività</label>
-          <div className="grid grid-cols-2 gap-2 mt-1.5">
-            {TYPES.map(t => (
-              <button key={t} type="button" onClick={() => setBusinessType(t)}
-                className={`px-3 py-2.5 rounded-lg text-sm font-medium text-left ${businessType === t ? "bg-brand-gold text-brand-green" : "bg-brand-cream/10 text-brand-cream/90"}`}>
-                {t}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div>
-          <label className="text-[11px] uppercase tracking-wider opacity-80">Fa consegne?</label>
-          <div className="grid grid-cols-2 gap-2 mt-1.5">
-            {(["si", "no"] as const).map(v => (
-              <button key={v} type="button" onClick={() => setDoesDelivery(v)}
-                className={`px-3 py-2.5 rounded-lg text-sm font-semibold ${doesDelivery === v ? "bg-brand-gold text-brand-green" : "bg-brand-cream/10 text-brand-cream/90"}`}>
-                {v === "si" ? "Sì" : "No"}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div>
-          <label className="text-[11px] uppercase tracking-wider opacity-80">Numero indicativo prodotti gestiti</label>
-          <div className="grid grid-cols-2 gap-2 mt-1.5">
-            {PRODS.map(p => (
-              <button key={p} type="button" onClick={() => setProductsCount(p)}
-                className={`px-3 py-2.5 rounded-lg text-sm font-medium ${productsCount === p ? "bg-brand-gold text-brand-green" : "bg-brand-cream/10 text-brand-cream/90"}`}>
-                {p}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <button type="submit" disabled={!canSubmit}
-          className="w-full py-3 rounded-lg bg-brand-gold text-brand-green font-semibold disabled:opacity-50">
-          Entra in ScalaShop
-        </button>
-      </form>
-    </div>
   );
 }
