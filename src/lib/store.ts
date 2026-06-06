@@ -49,33 +49,36 @@ interface Store {
   trash: TrashEntry[];
 }
 
+// Demo ScalaShop: nessun dato precaricato. Ogni utente parte da un database vuoto.
+// (I SEED_* legacy restano importati per compatibilità di tipo ma non vengono usati.)
+void SEED_PRODUCTS; void SEED_CLIENTS; void SEED_ORDERS; void SEED_BUNDLES; void SEED_CASUAL_SALES;
+void SEED_DELIVERIES; void SEED_PRODUCTIONS; void SEED_SUPPLIERS; void SEED_CASH_ENTRIES;
+void SEED_B2B_CLIENTS; void SEED_SUPPLIER_PAYMENTS; void SEED_FRESH_LOGS; void SEED_UNSOLD_ENTRIES;
+void SEED_SPECIAL_DAYS; void SEED_GOODS_RECEIPTS; void SEED_FIXED_COSTS; void SEED_ONLINE_ORDERS;
+void SEED_SHIPMENTS; void SEED_LOTS; void SEED_HACCP_READINGS; void SEED_CLEANING_TASKS; void SEED_TRASH;
+
 const SEED: Store = {
-  products: SEED_PRODUCTS,
-  clients: SEED_CLIENTS,
-  orders: SEED_ORDERS,
-  bundles: SEED_BUNDLES,
-  casualSales: SEED_CASUAL_SALES,
-  deliveries: SEED_DELIVERIES,
-  productions: SEED_PRODUCTIONS,
-  suppliers: SEED_SUPPLIERS,
-  cashEntries: SEED_CASH_ENTRIES,
-  b2bClients: SEED_B2B_CLIENTS,
-  supplierPayments: SEED_SUPPLIER_PAYMENTS,
-  freshLogs: SEED_FRESH_LOGS,
-  unsoldEntries: SEED_UNSOLD_ENTRIES,
-  specialDays: SEED_SPECIAL_DAYS,
-  businessHours: DEFAULT_BUSINESS_HOURS,
-  goodsReceipts: SEED_GOODS_RECEIPTS,
-  fixedCosts: SEED_FIXED_COSTS,
-  onlineOrders: SEED_ONLINE_ORDERS,
-  shipments: SEED_SHIPMENTS,
-  lots: SEED_LOTS,
-  haccpReadings: SEED_HACCP_READINGS,
-  cleaningTasks: SEED_CLEANING_TASKS,
-  trash: SEED_TRASH,
+  products: [], clients: [], orders: [], bundles: [], casualSales: [], deliveries: [],
+  productions: [], suppliers: [], cashEntries: [], b2bClients: [], supplierPayments: [],
+  freshLogs: [], unsoldEntries: [], specialDays: [], businessHours: DEFAULT_BUSINESS_HOURS,
+  goodsReceipts: [], fixedCosts: [], onlineOrders: [], shipments: [], lots: [],
+  haccpReadings: [], cleaningTasks: [], trash: [],
 };
 
 function migrate(parsed: any): Store {
+  // Demo ScalaShop V8: una sola volta, azzera tutti i dati esistenti (residui Sciorio).
+  const demoResetV8 = parsed.__demoResetV8 === true;
+  if (!demoResetV8) {
+    const wiped: Store = { ...SEED };
+    (wiped as any).__clientsSeedV2 = true;
+    (wiped as any).__cleanSeedV3 = true;
+    (wiped as any).__catalogV4 = true;
+    (wiped as any).__demoCleanV5 = true;
+    (wiped as any).__demoCleanV6 = true;
+    (wiped as any).__clientsImportV7 = true;
+    (wiped as any).__demoResetV8 = true;
+    return wiped;
+  }
   // One-time refresh of clients list (real customers list) — drop legacy demo clients.
   const clientsSeedV2 = parsed.__clientsSeedV2 === true;
   const clientsSource = parsed.clients ?? SEED.clients;
