@@ -1,0 +1,54 @@
+@import "tailwindcss" source(none);
+@import "tw-animate-css";
+@source "../src";
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-brand-green: var(--brand-green);
+  --color-brand-green-dark: var(--brand-green-dark);
+  --color-brand-gold: var(--brand-gold);
+  --color-brand-cream: var(--brand-cream);
+  --color-brand-white: var(--brand-white);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --font-display: 'Playfair Display', serif;
+  --font-sans: 'DM Sans', sans-serif;
+  --radius-md: 0.625rem;
+  --radius-lg: 0.875rem;
+  --radius-xl: 1.125rem;
+}
+
+:root {
+  --brand-green: #2C4A2E;
+  --brand-green-dark: #1F351F;
+  --brand-gold: #B8962E;
+  --brand-cream: #F5F0E8;
+  --brand-white: #FFFFFF;
+  --background: #F5F0E8;
+  --foreground: #2C4A2E;
+  --card: #FFFFFF;
+  --card-foreground: #2C4A2E;
+  --muted: #EFE8DC;
+  --muted-foreground: #6B6B5C;
+  --border: #E1D8C5;
+  --success: #2E7D32;
+  --warning: #C98A1A;
+  --danger: #B83A2E;
+}
+
+@layer base {
+  * { border-color: var(--border); }
+  html, body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+  }
+  h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.01em; }
+}
