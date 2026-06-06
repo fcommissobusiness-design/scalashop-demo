@@ -26,21 +26,22 @@
 }
 
 :root {
-  --brand-green: #2C4A2E;
-  --brand-green-dark: #1F351F;
-  --brand-gold: #B8962E;
-  --brand-cream: #F5F0E8;
+  /* ScalaShop demo palette: Navy + Orange + White */
+  --brand-green: #1A2E4A;
+  --brand-green-dark: #0F1D33;
+  --brand-gold: #F5A623;
+  --brand-cream: #FFFFFF;
   --brand-white: #FFFFFF;
-  --background: #F5F0E8;
-  --foreground: #2C4A2E;
+  --background: #FFFFFF;
+  --foreground: #1A2E4A;
   --card: #FFFFFF;
-  --card-foreground: #2C4A2E;
-  --muted: #EFE8DC;
-  --muted-foreground: #6B6B5C;
-  --border: #E1D8C5;
-  --success: #2E7D32;
-  --warning: #C98A1A;
-  --danger: #B83A2E;
+  --card-foreground: #1A2E4A;
+  --muted: #F4F6FA;
+  --muted-foreground: #5A6B82;
+  --border: #E2E8F0;
+  --success: #1F8A52;
+  --warning: #F5A623;
+  --danger: #C0392B;
 }
 
 @layer base {
