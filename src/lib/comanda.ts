@@ -152,7 +152,7 @@ function renderHtml(d: ComandaData): string {
   ${itemsRows ? `<table>${itemsRows}</table>` : `<div class="notes">Nessun prodotto.</div>`}
   <div class="sep"></div><div class="notes">Note: ${d.notes ? escapeHtml(d.notes) : "—"}</div>
   ${typeof d.total === "number" ? `<div class="sep"></div><div class="total">TOTALE ${fmtEuro(d.total)}</div>` : ""}
-  <div class="footer">Sciorio Gastronomia</div>
+  <div class="footer">ScalaShop</div>
   <div class="noprint"><button onclick="window.print()">Stampa / Salva PDF</button> <button onclick="window.close()">Chiudi</button></div>
 </body></html>`;
 }

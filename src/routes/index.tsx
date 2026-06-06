@@ -104,6 +104,7 @@ function Dashboard() {
       />
 
       <div className="p-4 md:p-6 space-y-5 md:space-y-6">
+        <TrialBanner />
         {tfId === "custom" && (
           <div className="bg-card rounded-xl p-3 flex flex-col md:flex-row gap-3 items-center">
             <Field label="Dal">
@@ -630,6 +631,39 @@ export function NewSaleSheet({ open, saleId, onClose, onSave }: {
         onInvoiceChange={setInvoice}
       />
     </Sheet>
+  );
+}
+
+/* Banner trial demo 14 giorni + CTA placeholder */
+const TRIAL_KEY = "scalashop-trial-start";
+function TrialBanner() {
+  const [start, setStart] = useState<string>(() => {
+    if (typeof window === "undefined") return new Date().toISOString();
+    const ex = localStorage.getItem(TRIAL_KEY);
+    if (ex) return ex;
+    const now = new Date().toISOString();
+    localStorage.setItem(TRIAL_KEY, now);
+    return now;
+  });
+  void setStart;
+  const days = 14;
+  const elapsed = Math.floor((Date.now() - new Date(start).getTime()) / 86400000);
+  const remaining = Math.max(0, days - elapsed);
+  return (
+    <div className="bg-card border border-brand-gold/30 rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
+      <div>
+        <p className="text-xs uppercase tracking-wider text-brand-gold font-semibold">Demo gratuita 14 giorni</p>
+        <p className="text-sm text-foreground/80 mt-0.5">
+          Stai provando ScalaShop. {remaining > 0
+            ? <>Ti restano <span className="font-semibold">{remaining} giorn{remaining === 1 ? "o" : "i"}</span> per testare ordini, clienti, cassa e magazzino.</>
+            : <>Prova terminata. Richiedi l'attivazione completa per continuare.</>}
+        </p>
+      </div>
+      <a href="#" onClick={(e) => e.preventDefault()}
+         className="shrink-0 inline-flex items-center justify-center px-4 py-2 rounded-lg bg-brand-green text-brand-cream text-sm font-semibold hover:opacity-90">
+        Richiedi attivazione completa
+      </a>
+    </div>
   );
 }
 

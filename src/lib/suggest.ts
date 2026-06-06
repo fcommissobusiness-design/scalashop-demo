@@ -35,7 +35,7 @@ export function suggestForProduct(product: Product, allBundles: Bundle[], allCli
   } else if (cat === "Formaggi Stagionati") {
     quando = "Weekend, eventi familiari";
     segments = ["top", "abituali"];
-    offerta = "Bundle Tagliere di Sciorio";
+    offerta = "Bundle Tagliere consigliato";
   } else if (cat === "Vini") {
     quando = "Venerdì e sabato sera";
     segments = ["top", "abituali"];

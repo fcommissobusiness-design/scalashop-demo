@@ -393,7 +393,7 @@ function HaccpSheet({ onClose, onSave }: { onClose: () => void; onSave: (r: Omit
       </div>
       {outOfRange && <p className="text-xs text-danger font-semibold">⚠ Temperatura fuori soglia ({mn}÷{mx}°C)</p>}
       <Field label="Operatore">
-        <input value={operator} onChange={e => setOperator(e.target.value)} placeholder="Es. Daniele"
+        <input value={operator} onChange={e => setOperator(e.target.value)} placeholder="Es. Mario"
           className="w-full bg-card border border-border rounded-lg p-3" />
       </Field>
       <Field label="Note">
