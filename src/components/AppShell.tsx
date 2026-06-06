@@ -122,6 +122,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       Sincronizzazione dati…
     </div>
   );
+  if (!hasCompletedOnboarding(userId)) return <OnboardingScreen userId={userId} onDone={() => { /* re-render */ window.dispatchEvent(new Event("scalashop-onboarded")); }} />;
 
   const isActive = (to: string) => to === "/" ? path === "/" : path.startsWith(to);
 
