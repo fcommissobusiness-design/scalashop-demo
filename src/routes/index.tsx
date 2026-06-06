@@ -104,6 +104,7 @@ function Dashboard() {
       />
 
       <div className="p-4 md:p-6 space-y-5 md:space-y-6">
+        <TrialBanner />
         {tfId === "custom" && (
           <div className="bg-card rounded-xl p-3 flex flex-col md:flex-row gap-3 items-center">
             <Field label="Dal">
