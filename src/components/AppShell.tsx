@@ -123,15 +123,15 @@ export function AppShell({ children }: { children: ReactNode }) {
   const syncStatus = useCloudSync(userId);
 
   if (!authReady) return <div className="min-h-screen bg-brand-green" />;
-  if (!userId) return <AuthScreen />;
-  if (syncStatus === "loading") return (
+  const effectiveUserId = userId ?? "demo-anon";
+  if (userId && syncStatus === "loading") return (
     <div className="min-h-screen bg-brand-green text-brand-cream flex items-center justify-center text-sm opacity-80">
       Sincronizzazione dati…
     </div>
   );
   void onbTick;
-  if (!hasCompletedOnboarding(userId)) {
-    return <OnboardingScreen userId={userId} onDone={() => window.dispatchEvent(new Event("scalashop-onboarded"))} />;
+  if (!hasCompletedOnboarding(effectiveUserId)) {
+    return <OnboardingScreen userId={effectiveUserId} onDone={() => window.dispatchEvent(new Event("scalashop-onboarded"))} />;
   }
 
   const isActive = (to: string) => to === "/" ? path === "/" : path.startsWith(to);
