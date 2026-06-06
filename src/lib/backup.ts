@@ -227,7 +227,7 @@ export function buildFullBackup(): FullBackup {
 export function downloadFullBackup() {
   const backup = buildFullBackup();
   downloadFile(
-    `sciorio-backup-completo-${todayStr()}.json`,
+    `scalashop-backup-completo-${todayStr()}.json`,
     JSON.stringify(backup, null, 2),
     "application/json",
   );
@@ -301,7 +301,7 @@ export function maybeAutoBackup(force = false) {
 export function downloadAutoBackup(date: string) {
   const entry = readAutoBackups().find((b) => b.date === date);
   if (!entry) return;
-  downloadFile(`sciorio-autobackup-${date.slice(0, 10)}.json`, entry.payload, "application/json");
+  downloadFile(`scalashop-autobackup-${date.slice(0, 10)}.json`, entry.payload, "application/json");
 }
 
 export function deleteAutoBackup(date: string) {
