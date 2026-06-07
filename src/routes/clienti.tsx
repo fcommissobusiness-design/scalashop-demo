@@ -2,7 +2,7 @@ import { createFileRoute, useSearch } from "@tanstack/react-router";
 import { useMemo, useState, useEffect } from "react";
 import { useStore } from "@/lib/store";
 import { TopBar, formatDate, Sheet, Field, Fab, formatEuro } from "@/components/AppShell";
-import { SEGMENT_META, type Client, type Segment } from "@/lib/data";
+import { SEGMENT_META, type Client } from "@/lib/data";
 import {
   clientLTV, clientOrderCount, clientAvgTicket, clientFrequencyPerMonth,
   daysInactive, suggestSegment, clientTopProducts, clientBadges,
@@ -11,69 +11,32 @@ import {
 import { WhatsAppDialog } from "@/components/WhatsAppDialog";
 import { CallBtn } from "@/components/QuickActions";
 
-interface Search { f?: string }
-
 export const Route = createFileRoute("/clienti")({
   component: ClientiPage,
-  validateSearch: (s: Record<string, unknown>): Search => ({ f: typeof s.f === "string" ? s.f : undefined }),
 });
 
-const SEGMENTS: (Segment | "all")[] = ["all", "top", "abituali", "occasionali", "nuovi", "inattivi"];
-
 function ClientiPage() {
-  const search = useSearch({ from: "/clienti" }) as Search;
   const { clients, orders, products, casualSales, addClient, updateClient, deleteClient } = useStore();
-  const [tab, setTab] = useState<Segment | "all">("all");
   const [q, setQ] = useState("");
   const [openId, setOpenId] = useState<string | null>(null);
   const [openNew, setOpenNew] = useState(false);
   const [confirmDel, setConfirmDel] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (search.f === "inattivi") setTab("inattivi");
-    if (search.f === "nuovi") setTab("nuovi");
-  }, [search.f]);
-
-  const counts = useMemo(() => {
-    const m: Record<Segment, number> = { top: 0, abituali: 0, occasionali: 0, nuovi: 0, inattivi: 0 };
-    for (const c of clients) m[c.segment]++;
-    return m;
-  }, [clients]);
-
   const filtered = useMemo(() => clients.filter((c) => {
-    if (tab !== "all" && c.segment !== tab) return false;
     if (q) {
       const t = q.toLowerCase();
       if (!(c.name.toLowerCase().includes(t) || c.phone.includes(q))) return false;
     }
     return true;
-  }), [clients, tab, q]);
+  }), [clients, q]);
 
   return (
     <div>
       <TopBar title="Clienti" subtitle={`${clients.length} schede totali`} />
 
-      {/* Segmenti header — solo lettura */}
-      <div className="px-4 md:px-6 pt-3 grid grid-cols-5 gap-2">
-        {(Object.keys(SEGMENT_META) as Segment[]).map((s) => (
-          <div key={s} className="bg-card rounded-lg p-2 text-center">
-            <p className="font-display text-lg text-brand-green leading-none">{counts[s]}</p>
-            <p className="text-[9px] text-muted-foreground mt-1 leading-tight">{SEGMENT_META[s].label}</p>
-          </div>
-        ))}
-      </div>
-
       <div className="px-4 md:px-6 pt-3 space-y-2">
         <input placeholder="Cerca per nome o telefono..." value={q} onChange={(e) => setQ(e.target.value)}
           className="w-full bg-card border border-border rounded-lg p-2.5 text-sm" />
-        <div className="flex gap-1.5 overflow-x-auto pb-1">
-          {SEGMENTS.map((s) => (
-            <button key={s} onClick={() => setTab(s)}
-              className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap ${tab === s ? "bg-brand-green text-brand-cream" : "bg-card text-foreground/70"}`}>
-              {s === "all" ? "Tutti" : SEGMENT_META[s].label}
-            </button>
-          ))}
-        </div>
       </div>
 
       <div className="p-4 md:p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
