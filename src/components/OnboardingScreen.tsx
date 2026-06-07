@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import { useStore } from "@/lib/store";
 import logoAsset from "@/assets/scalashop-logo.png.asset.json";
 import {
-  parseClientsText, parseProductsText, toClient, toProduct, extractPdfText,
+  parseClientsText, parseProductsText, toClient, toProduct, extractFromFile,
   type ParsedClient, type ParsedProduct,
 } from "@/lib/demo-parsers";
 
@@ -82,12 +82,17 @@ export function OnboardingScreen({ userId, onDone }: { userId: string; onDone: (
   const onClientsFile = async (f: File) => {
     setClientsMsg("Lettura file…");
     try {
-      const txt = await f.text();
-      setClientsText(prev => prev ? prev + "\n" + txt : txt);
-      const parsed = parseClientsText(txt);
+      const res = await extractFromFile(f);
+      if (res.kind === "image") {
+        setClientsMsg("Immagini: per ora copia/incolla i nomi nel riquadro qui sotto.");
+        return;
+      }
+      if (!res.text.trim()) { setClientsMsg("File vuoto o non leggibile."); return; }
+      setClientsText(prev => prev ? prev + "\n" + res.text : res.text);
+      const parsed = parseClientsText(res.text);
       setClientsMsg(`Rilevati ${parsed.length} clienti — verranno creati al termine.`);
     } catch {
-      setClientsMsg("Impossibile leggere il file.");
+      setClientsMsg("Impossibile leggere il file. Prova a incollare il testo qui sotto.");
     }
   };
 
@@ -95,21 +100,32 @@ export function OnboardingScreen({ userId, onDone }: { userId: string; onDone: (
     setProductsMsg("Lettura file…");
     setProductsParsing(true);
     try {
-      let txt = "";
-      if (/\.pdf$/i.test(f.name) || f.type === "application/pdf") {
-        txt = await extractPdfText(f);
-      } else {
-        txt = await f.text();
+      const res = await extractFromFile(f);
+      if (res.kind === "image") {
+        setProductsMsg("Immagini: per ora copia/incolla il listino nel riquadro qui sotto.");
+        return;
       }
-      setProductsText(prev => prev ? prev + "\n" + txt : txt);
-      const parsed = parseProductsText(txt);
+      if (!res.text.trim()) { setProductsMsg("File vuoto o non leggibile."); return; }
+      setProductsText(prev => prev ? prev + "\n" + res.text : res.text);
+      const parsed = parseProductsText(res.text);
       setProductsMsg(`Rilevati ${parsed.length} prodotti — verranno creati al termine.`);
-    } catch (e) {
-      setProductsMsg("Impossibile leggere il file. Prova a incollare il listino come testo.");
+    } catch {
+      setProductsMsg("Impossibile leggere il file. Prova a incollare il listino qui sotto.");
     } finally {
       setProductsParsing(false);
     }
   };
+
+  // ---- Drag & drop handlers ----
+  const makeDragHandlers = (onFile: (f: File) => void | Promise<void>) => ({
+    onDragOver: (e: React.DragEvent) => { e.preventDefault(); e.stopPropagation(); },
+    onDragEnter: (e: React.DragEvent) => { e.preventDefault(); e.stopPropagation(); },
+    onDrop: (e: React.DragEvent) => {
+      e.preventDefault(); e.stopPropagation();
+      const f = e.dataTransfer?.files?.[0];
+      if (f) onFile(f);
+    },
+  });
 
   // ---- Submit ----
   const submit = async (e: React.FormEvent) => {
