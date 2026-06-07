@@ -155,7 +155,6 @@ function Dashboard() {
         <section className="grid grid-cols-2 md:grid-cols-4 gap-2">
           <Quick onClick={() => setOpenOrder(true)} label="Nuovo ordine" />
           <Quick onClick={() => setOpenSale(true)} label="Nuovo scontrino" />
-          <Quick onClick={() => setOpenPay(true)} label="Nuovo pagamento" />
           <Quick onClick={() => setOpenDeliv(true)} label="Nuova consegna" />
         </section>
 
@@ -178,7 +177,7 @@ function Dashboard() {
             <Link to="/ordini" className="text-xs text-brand-gold font-semibold">Tutti gli ordini →</Link>
           </div>
           {ritiriFrame.length === 0 && (
-            <div className="bg-card rounded-xl p-6 text-center text-sm text-muted-foreground">Nessun ritiro nel periodo.</div>
+            <div className="bg-card rounded-xl p-6 text-center text-sm text-muted-foreground border border-brand-green/25">Nessun ritiro nel periodo.</div>
           )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {ritiriFrame.map((o) => {
@@ -236,7 +235,7 @@ function Dashboard() {
             <h2 className="font-display text-xl text-brand-green">Scontrini ({salesInFrame.length})</h2>
           </div>
           {salesInFrame.length === 0 && (
-            <div className="bg-card rounded-xl p-6 text-center text-sm text-muted-foreground">Nessuno scontrino nel periodo.</div>
+            <div className="bg-card rounded-xl p-6 text-center text-sm text-muted-foreground border border-brand-green/25">Nessuno scontrino nel periodo.</div>
           )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {salesInFrame.slice(0, 12).map((s) => {
@@ -266,7 +265,7 @@ function Dashboard() {
             <Link to="/consegne" className="text-xs text-brand-gold font-semibold">Tutte le consegne →</Link>
           </div>
           {consegneAperte.length === 0 && (
-            <div className="bg-card rounded-xl p-6 text-center text-sm text-muted-foreground">Nessuna consegna aperta.</div>
+            <div className="bg-card rounded-xl p-6 text-center text-sm text-muted-foreground border border-brand-green/25">Nessuna consegna aperta nel periodo.</div>
           )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {consegneAperte.slice(0, 8).map((d) => {
@@ -298,8 +297,6 @@ function Dashboard() {
               className="bg-brand-green text-brand-cream rounded-xl py-4 font-semibold">Nuovo ordine</button>
             <button onClick={() => { setPickAction(false); setOpenSale(true); }}
               className="bg-brand-gold text-white rounded-xl py-4 font-semibold">Nuovo scontrino</button>
-            <button onClick={() => { setPickAction(false); setOpenPay(true); }}
-              className="bg-danger text-white rounded-xl py-4 font-semibold">Nuovo pagamento</button>
             <button onClick={() => { setPickAction(false); setOpenDeliv(true); }}
               className="bg-blue-600 text-white rounded-xl py-4 font-semibold">Nuova consegna</button>
           </div>
@@ -634,35 +631,35 @@ export function NewSaleSheet({ open, saleId, onClose, onSave }: {
   );
 }
 
-/* Banner trial demo 14 giorni + CTA placeholder */
-const TRIAL_KEY = "scalashop-trial-start";
+/* Banner trial demo 14 giorni + CTA placeholder — colori palette ScalaShop */
+import { getTrialDaysLeft } from "@/lib/demo-flags";
+import { supabase } from "@/integrations/supabase/client";
 function TrialBanner() {
-  const [start, setStart] = useState<string>(() => {
-    if (typeof window === "undefined") return new Date().toISOString();
-    const ex = localStorage.getItem(TRIAL_KEY);
-    if (ex) return ex;
-    const now = new Date().toISOString();
-    localStorage.setItem(TRIAL_KEY, now);
-    return now;
-  });
-  void setStart;
-  const days = 14;
-  const elapsed = Math.floor((Date.now() - new Date(start).getTime()) / 86400000);
-  const remaining = Math.max(0, days - elapsed);
+  // Calcola l'userId effettivo per leggere completedAt da localStorage onboarding.
+  const [userId, setUserId] = useState<string>("demo-anon");
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      setUserId(data.session?.user?.id ?? "demo-anon");
+    });
+  }, []);
+  const remaining = getTrialDaysLeft(userId);
   return (
-    <div className="bg-card border border-brand-gold/30 rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
-      <div>
-        <p className="text-xs uppercase tracking-wider text-brand-gold font-semibold">Demo gratuita 14 giorni</p>
-        <p className="text-sm text-foreground/80 mt-0.5">
-          Stai provando ScalaShop. {remaining > 0
-            ? <>Ti restano <span className="font-semibold">{remaining} giorn{remaining === 1 ? "o" : "i"}</span> per testare ordini, clienti, cassa e magazzino.</>
-            : <>Prova terminata. Richiedi l'attivazione completa per continuare.</>}
+    <div className="rounded-2xl p-5 md:p-6 flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-md"
+         style={{ background: "linear-gradient(135deg, var(--brand-green), var(--brand-green-dark))" }}>
+      <div className="text-brand-cream">
+        <p className="text-[11px] uppercase tracking-wider text-brand-gold font-bold">Prova gratuita ScalaShop</p>
+        <p className="font-display text-lg md:text-xl mt-1 leading-tight">
+          {remaining > 0 ? (
+            <>Stai provando ScalaShop. Ti restano <span className="text-brand-gold">{remaining} giorn{remaining === 1 ? "o" : "i"}</span> per testare il nuovo sistema operativo della tua attività.</>
+          ) : (
+            <>Prova terminata. <span className="text-brand-gold">Attiva il piano Starter</span> per continuare.</>
+          )}
         </p>
       </div>
-      <a href="#" onClick={(e) => e.preventDefault()}
-         className="shrink-0 inline-flex items-center justify-center px-4 py-2 rounded-lg bg-brand-green text-brand-cream text-sm font-semibold hover:opacity-90">
-        Richiedi attivazione completa
-      </a>
+      <button type="button" onClick={(e) => e.preventDefault()}
+         className="shrink-0 inline-flex items-center justify-center px-5 py-3 rounded-xl bg-brand-gold text-white text-sm font-bold shadow hover:brightness-105 transition">
+        Attiva il piano Starter
+      </button>
     </div>
   );
 }

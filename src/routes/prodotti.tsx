@@ -3,8 +3,7 @@ import { useMemo, useState } from "react";
 import { useStore } from "@/lib/store";
 import { TopBar, formatEuro, Sheet, Field, Fab, formatDate } from "@/components/AppShell";
 import { calcMargin, type Product, type ProductCategory } from "@/lib/data";
-import { productSalesStats, marginColor } from "@/lib/metrics";
-import { TIME_FRAME_OPTIONS, makeTimeFrame, inFrame, type TimeFrameId } from "@/lib/timeframe";
+import { marginColor } from "@/lib/metrics";
 
 export const Route = createFileRoute("/prodotti")({
   component: ProdottiPage,
@@ -29,29 +28,12 @@ function isOutOfStock(p: Product): boolean {
 
 function ProdottiPage() {
   const navigate = useNavigate();
-  const { products, orders, casualSales, updateProduct, deleteProduct } = useStore();
-  const [filter, setFilter] = useState<ProductCategory | "all">("all");
+  const { products, updateProduct, deleteProduct } = useStore();
   const [q, setQ] = useState("");
   const [editId, setEditId] = useState<string | null>(null);
-  const [showInactive, setShowInactive] = useState(true);
-  const [tfId, setTfId] = useState<TimeFrameId>("thisMonth");
-  const tf = useMemo(() => makeTimeFrame(tfId), [tfId]);
-
-  const ordersInFrame = useMemo(() => orders.filter(o => inFrame(o.pickupDate, tf)), [orders, tf]);
-  const salesInFrame = useMemo(() => casualSales.filter(s => inFrame(s.date, tf)), [casualSales, tf]);
-
-  const stats = useMemo(
-    () => productSalesStats(ordersInFrame, salesInFrame, products),
-    [ordersInFrame, salesInFrame, products],
-  );
-  const statsById = useMemo(() => new Map(stats.map(s => [s.product.id, s])), [stats]);
-
-  const negativi = products.filter(p => { const m = calcMargin(p); return m !== null && m < 0; });
 
   const grouped = useMemo(() => {
     const list = products.filter(p => {
-      if (filter !== "all" && p.category !== filter) return false;
-      if (!showInactive && !p.active) return false;
       if (q && !p.name.toLowerCase().includes(q.toLowerCase())) return false;
       return true;
     });
@@ -61,66 +43,29 @@ function ProdottiPage() {
       if (items.length) map.set(cat, items);
     }
     return map;
-  }, [products, filter, showInactive, q]);
-
-  const topVendite = [...stats].sort((a, b) => b.qty - a.qty).slice(0, 5);
-  const topProfitti = [...stats].sort((a, b) => b.profit - a.profit).slice(0, 5);
-  const lentiZero = products.filter(p => p.active && !statsById.has(p.id)).slice(0, 8);
+  }, [products, q]);
 
   return (
     <div>
       <TopBar title="Prodotti" subtitle={`${products.length} totali · ${products.filter(p => p.active).length} attivi`} />
 
-      <div className="px-4 md:px-6 pt-4 flex justify-end">
-        <select value={tfId} onChange={e => setTfId(e.target.value as TimeFrameId)}
-          className="bg-card border border-border rounded-lg px-2 py-1.5 text-xs">
-          {TIME_FRAME_OPTIONS.map(o => <option key={o.id} value={o.id}>{o.label}</option>)}
-        </select>
-      </div>
-
-      {negativi.length > 0 && (
-        <div className="mx-4 md:mx-6 mt-3 bg-danger/10 border border-danger/30 rounded-xl p-3 text-sm text-danger">
-          <strong>Alert:</strong> {negativi.length} prodotto/i sotto costo: {negativi.map(p => p.name).join(", ")}
-        </div>
-      )}
-
       <div className="px-4 md:px-6 pt-3 space-y-2">
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cerca prodotto..."
           className="w-full bg-card border border-border rounded-lg p-2.5 text-sm" />
-        <div className="flex gap-1.5 overflow-x-auto pb-1">
-          <button onClick={() => setFilter("all")}
-            className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap ${filter === "all" ? "bg-brand-green text-brand-cream" : "bg-card text-foreground/70"}`}>
-            Tutte
-          </button>
-          {CATEGORIES.map((c) => (
-            <button key={c} onClick={() => setFilter(c)}
-              className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap ${filter === c ? "bg-brand-green text-brand-cream" : "bg-card text-foreground/70"}`}>
-              {c}
-            </button>
-          ))}
-          <label className="ml-auto flex items-center gap-1 text-xs whitespace-nowrap">
-            <input type="checkbox" checked={showInactive} onChange={(e) => setShowInactive(e.target.checked)} />
-            Inattivi
-          </label>
-        </div>
       </div>
 
-      {filter === "all" && !q && (
-        <div className="px-4 md:px-6 pt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
-          <RankCard title={`Più venduti · ${tf.label}`} items={topVendite.map(s => ({ name: s.product.name, value: `${s.qty.toFixed(s.product.unit === "kg" ? 1 : 0)} ${s.product.unit}` }))} />
-          <RankCard title={`Più profittevoli · ${tf.label}`} items={topProfitti.map(s => ({ name: s.product.name, value: formatEuro(s.profit) }))} />
-          <RankCard title={`Mai venduti · ${tf.label}`} items={lentiZero.map(p => ({ name: p.name, value: "—" }))} />
-        </div>
-      )}
-
       <div className="p-4 md:p-6 space-y-5">
+        {grouped.size === 0 && (
+          <div className="bg-card rounded-xl p-6 text-center text-sm text-muted-foreground border border-brand-green/25">
+            Nessun prodotto. Aggiungine uno da <button onClick={() => navigate({ to: "/magazzino" })} className="text-brand-gold font-semibold underline underline-offset-2">Magazzino</button>.
+          </div>
+        )}
         {[...grouped.entries()].map(([cat, items]) => (
           <section key={cat}>
             <h2 className="font-display text-lg text-brand-green mb-2">{cat}</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
               {items.map(p => {
                 const margin = calcMargin(p);
-                const stat = statsById.get(p.id);
                 const outOfStock = isOutOfStock(p);
                 return (
                   <div key={p.id} className={`bg-card rounded-xl p-3 shadow-sm ${!p.active ? "opacity-60" : ""}`}>
@@ -137,9 +82,6 @@ function ProdottiPage() {
                           Margine: {margin === null ? "n/d" : `${margin.toFixed(1)}%`}
                         </span>
                       </div>
-                      <p className="text-[11px] text-muted-foreground mt-1">
-                        Venduto {tf.label.toLowerCase()}: {stat ? `${stat.qty.toFixed(p.unit === "kg" ? 1 : 0)} ${p.unit} · ${formatEuro(stat.revenue)}` : "—"}
-                      </p>
                     </button>
                     <div className="flex gap-1.5 mt-2">
                       <button onClick={() => updateProduct(p.id, { active: !p.active })}
@@ -155,7 +97,7 @@ function ProdottiPage() {
         ))}
       </div>
 
-      <Fab onClick={() => navigate({ to: "/entrate-merci" })} />
+      <Fab onClick={() => navigate({ to: "/magazzino" })} />
 
       {editId && (() => {
         const p = products.find(x => x.id === editId);
