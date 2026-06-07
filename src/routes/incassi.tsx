@@ -15,7 +15,7 @@ export const Route = createFileRoute("/incassi")({ component: CassaPage });
 type Movement = {
   id: string;
   date: string;
-  type: "entrata" | "uscita";
+  kind: "ordine" | "scontrino" | "consegna";
   amount: number;
   label: string;
   meta?: string;
