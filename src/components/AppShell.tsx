@@ -141,17 +141,21 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   const isActive = (to: string) => to === "/" ? path === "/" : path.startsWith(to);
 
-  const isWip = WIP_ROUTES.has(path);
+  const locked = isLockedPath(path);
+  const businessName = getBusinessName(effectiveUserId);
 
   return (
     <div className="min-h-screen bg-brand-cream md:flex">
+      {/* Barra promozionale: nasconde su mobile sopra topbar fissa? La teniamo sopra a tutta la pagina. */}
       {/* Sidebar desktop */}
       <aside className="hidden md:flex md:flex-col w-60 bg-brand-green text-brand-cream sticky top-0 h-screen p-4 z-40 overflow-y-auto">
         <div className="px-2 py-3 mb-4 border-b border-brand-cream/10 flex items-center gap-2">
           <img src={logoAsset.url} alt="" className="h-9 w-9 object-contain rounded bg-white p-0.5" />
           <div>
             <h1 className="font-display text-xl text-brand-gold leading-none">ScalaShop</h1>
-            <p className="text-[10px] opacity-70 mt-0.5">Food retail artigianale</p>
+            <p className="text-[10px] opacity-80 mt-0.5 truncate max-w-[10rem]">
+              {businessName || "La tua attività"}
+            </p>
           </div>
         </div>
         <nav className="flex flex-col gap-3">
@@ -163,9 +167,9 @@ export function AppShell({ children }: { children: ReactNode }) {
                   const active = isActive(n.to);
                   return (
                     <Link key={`${g.label}-${n.to}`} to={n.to}
-                      className={`px-3 py-2 rounded-lg text-sm font-medium flex items-center justify-between gap-2 ${active ? "bg-brand-gold/20 text-brand-gold" : "text-brand-cream/80 hover:bg-brand-cream/5"} ${n.wip ? "opacity-60" : ""}`}>
+                      className={`px-3 py-2 rounded-lg text-sm font-medium flex items-center justify-between gap-2 ${active ? "bg-brand-gold/20 text-brand-gold" : "text-brand-cream/80 hover:bg-brand-cream/5"} ${n.locked ? "opacity-70" : ""}`}>
                       <span>{n.label}</span>
-                      {n.wip && <span className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-brand-cream/10 text-brand-cream/70">WIP</span>}
+                      {n.locked && <span title="Disponibile con il piano Starter" className="text-[10px] leading-none">🔒</span>}
                     </Link>
                   );
                 })}
@@ -177,10 +181,15 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       {/* Contenuto */}
       <main className="flex-1 pb-24 md:pb-8 md:max-w-6xl md:mx-auto w-full relative">
-        <div className={isWip ? "pointer-events-none select-none opacity-40 blur-[1px]" : ""} aria-hidden={isWip}>
-          {children}
-        </div>
-        {isWip && <WipBlocker />}
+        <PromoMarquee />
+        {businessName && (
+          <div className="hidden md:flex justify-end px-6 pt-3 -mb-1">
+            <span className="text-xs font-semibold text-brand-green/70 bg-brand-gold/15 border border-brand-gold/30 rounded-full px-3 py-1">
+              {businessName}
+            </span>
+          </div>
+        )}
+        {locked ? <LockedSection /> : children}
       </main>
 
       {/* Bottom nav mobile */}
@@ -215,9 +224,9 @@ export function AppShell({ children }: { children: ReactNode }) {
                       const active = isActive(n.to);
                       return (
                         <Link key={`${g.label}-${n.to}`} to={n.to} onClick={() => setMoreOpen(false)}
-                          className={`px-3 py-2.5 rounded-lg text-sm font-medium flex items-center justify-between gap-2 ${active ? "bg-brand-green text-brand-cream" : "bg-card text-foreground/80"} ${n.wip ? "opacity-60" : ""}`}>
+                          className={`px-3 py-2.5 rounded-lg text-sm font-medium flex items-center justify-between gap-2 ${active ? "bg-brand-green text-brand-cream" : "bg-card text-foreground/80"} ${n.locked ? "opacity-70" : ""}`}>
                           <span>{n.label}</span>
-                          {n.wip && <span className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-muted text-muted-foreground">WIP</span>}
+                          {n.locked && <span title="Disponibile con il piano Starter" className="text-[10px] leading-none">🔒</span>}
                         </Link>
                       );
                     })}
