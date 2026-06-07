@@ -107,13 +107,15 @@ function ConsegnePage() {
       </div>
 
       <div className="px-4 md:px-6 pt-3 flex gap-1.5 overflow-x-auto pb-1 items-center">
-        <span className="text-xs font-semibold text-muted-foreground whitespace-nowrap pr-1">Status:</span>
         {(Object.keys(STATUS_LABEL) as DeliveryStatus[]).map(s => (
           <button key={s} onClick={() => toggleStatus(s)}
-            className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap ${statusFilter.has(s) ? "bg-brand-green text-brand-cream" : "bg-card text-foreground/70"}`}>
+            className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap border-2 transition ${statusFilter.has(s) ? "bg-brand-gold/15 text-brand-green border-brand-gold" : "bg-card text-foreground/70 border-border hover:border-brand-gold/40"}`}>
             {STATUS_LABEL[s]}
           </button>
         ))}
+        {statusFilter.size > 0 && (
+          <button onClick={() => setStatusFilter(new Set())} className="px-2 py-1.5 text-[11px] text-muted-foreground underline whitespace-nowrap">azzera</button>
+        )}
       </div>
 
       <div className="p-4 md:p-6 grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -202,7 +204,7 @@ function ConsegnePage() {
 
 function Kpi({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
   return (
-    <div className={`rounded-xl p-3 ${highlight ? "bg-brand-green text-brand-cream" : "bg-card"}`}>
+    <div className={`rounded-xl p-3 border ${highlight ? "bg-brand-green text-brand-cream border-brand-green" : "bg-card border-brand-green/25"}`}>
       <p className={`text-[10px] uppercase tracking-wide ${highlight ? "text-brand-gold" : "text-muted-foreground"}`}>{label}</p>
       <p className={`font-display text-2xl mt-1 ${highlight ? "text-brand-gold" : "text-brand-green"}`}>{value}</p>
     </div>
