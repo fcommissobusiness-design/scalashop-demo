@@ -4,46 +4,49 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCloudSync, useSyncStatus } from "@/lib/cloudSync";
 import { OnboardingScreen, hasCompletedOnboarding } from "./OnboardingScreen";
 import logoAsset from "@/assets/scalashop-logo.png.asset.json";
+import { isLockedPath, getBusinessName } from "@/lib/demo-flags";
+import { LockedSection } from "@/components/LockedSection";
+import { PromoMarquee } from "@/components/PromoMarquee";
 
-type NavItem = { to: string; label: string; short: string; wip?: boolean };
+type NavItem = { to: string; label: string; short: string; locked?: boolean };
 type NavGroup = { label: string; items: NavItem[] };
-
-export const WIP_ROUTES = new Set<string>(["/produzione", "/food-safety", "/b2b", "/ecommerce"]);
-
-// Sezioni nascoste dalla navigazione nella demo ScalaShop (codice mantenuto, route ancora raggiungibili manualmente).
-const HIDDEN_ROUTES = new Set<string>([
-  "/b2b", "/produzione", "/food-safety", "/ecommerce",
-  "/fatture", "/finanza", "/fiscale", "/offerte",
-]);
 
 const NAV_GROUPS: NavGroup[] = [
   { label: "Operativo", items: [
     { to: "/", label: "Dashboard", short: "Dashboard" },
     { to: "/ordini", label: "Ordini", short: "Ordini" },
-    { to: "/pagamenti", label: "Scontrini", short: "Scontrini" },
     { to: "/consegne", label: "Consegne", short: "Consegne" },
     { to: "/clienti", label: "Clienti", short: "Clienti" },
+    { to: "/offerte", label: "Offerte", short: "Offerte", locked: true },
+    { to: "/b2b", label: "B2B", short: "B2B", locked: true },
   ]},
-  { label: "Magazzino", items: [
-    { to: "/prodotti", label: "Prodotti", short: "Prodotti" },
+  { label: "Magazzino e Prodotti", items: [
     { to: "/magazzino", label: "Magazzino", short: "Magazzino" },
-    { to: "/entrate-merci", label: "Scarico Prodotti", short: "Scarico Prodotti" },
-    { to: "/fornitori", label: "Fornitori", short: "Fornitori" },
+    { to: "/prodotti", label: "Prodotti", short: "Prodotti" },
+    { to: "/entrate-merci", label: "Scarico Prodotti", short: "Scarico", locked: true },
+    { to: "/fornitori", label: "Fornitori", short: "Fornitori", locked: true },
+    { to: "/produzione", label: "Produzione", short: "Produzione", locked: true },
+    { to: "/food-safety", label: "Food Safety", short: "Food Safety", locked: true },
   ]},
-  { label: "Finanza", items: [
+  { label: "Vendite Online", items: [
+    { to: "/ecommerce", label: "E-commerce", short: "E-commerce", locked: true },
+  ]},
+  { label: "Finanza e Amministrazione", items: [
     { to: "/incassi", label: "Cassa", short: "Cassa" },
-    { to: "/report", label: "Report", short: "Report" },
-  ]},
-  { label: "Pannello", items: [
-    { to: "/cestino", label: "Cestino", short: "Cestino" },
+    { to: "/fatture", label: "Fatture", short: "Fatture", locked: true },
+    { to: "/pagamenti", label: "Pagamenti", short: "Pagamenti", locked: true },
+    { to: "/finanza", label: "Finanziario", short: "Finanziario", locked: true },
+    { to: "/fiscale", label: "Fiscalità", short: "Fiscalità", locked: true },
+    { to: "/report", label: "Report", short: "Report", locked: true },
+    { to: "/cestino", label: "Cestino", short: "Cestino", locked: true },
     { to: "/admin", label: "Pannello di Controllo", short: "Pannello" },
   ]},
-].map(g => ({ ...g, items: g.items.filter(it => !HIDDEN_ROUTES.has(it.to)) }));
+];
 
 const MOBILE_PRIMARY: NavItem[] = [
   { to: "/", label: "Dashboard", short: "Dashboard" },
   { to: "/ordini", label: "Ordini", short: "Ordini" },
-  { to: "/pagamenti", label: "Scontrini", short: "Scontrini" },
+  { to: "/scontrini", label: "Scontrini", short: "Scontrini" },
   { to: "/consegne", label: "Consegne", short: "Consegne" },
   { to: "/incassi", label: "Cassa", short: "Cassa" },
 ];
