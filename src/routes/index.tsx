@@ -152,7 +152,7 @@ function Dashboard() {
         )}
 
         {/* QUICK ACTIONS */}
-        <section className="grid grid-cols-2 md:grid-cols-4 gap-2">
+        <section className="grid grid-cols-3 gap-2">
           <Quick onClick={() => setOpenOrder(true)} label="Nuovo ordine" />
           <Quick onClick={() => setOpenSale(true)} label="Nuovo scontrino" />
           <Quick onClick={() => setOpenDeliv(true)} label="Nuova consegna" />
