@@ -170,19 +170,23 @@ export function parseProductsText(text: string): ParsedProduct[] {
   for (const raw of trimmed.split(/\r?\n/)) {
     const line = raw.trim();
     if (!line) continue;
-    const priceMatch = line.match(/(\d+(?:[.,]\d{1,2}))(?:\s*€)?\s*(?:\/?(kg|pz))?\s*$/i);
-    if (!priceMatch) {
-      // Fallback: prezzo in mezzo
-      const inner = line.match(/(\d+[.,]\d{1,2})\s*€?/);
-      if (!inner) continue;
-      const price = parsePrice(inner[1]) ?? 0;
-      const name = line.replace(inner[0], "").replace(/[-|;,]\s*$/, "").trim();
-      if (name) out.push({ name, price, unit: parseUnit(line) });
-      continue;
+    // 1) Trova un prezzo (con o senza decimali): "15", "15,50", "15.5", "15€"
+    //    Accetta anche "—" o "-" come separatore prima del prezzo.
+    const priceRe = /(\d+(?:[.,]\d{1,2})?)\s*€?\s*(?:\/\s*(kg|pz|chilo|chili|cad|pezzo|pezzi|unit[aà]?))?/gi;
+    let last: RegExpExecArray | null = null;
+    let m: RegExpExecArray | null;
+    while ((m = priceRe.exec(line)) !== null) last = m;
+    if (!last) continue;
+
+    const price = parsePrice(last[1]) ?? 0;
+    const unit = (last[2] ? parseUnit(last[2]) : undefined) ?? parseUnit(line);
+
+    // Nome = tutto prima del prezzo trovato, ripulito da separatori finali.
+    let name = line.slice(0, last.index).replace(/[\-–—|;,€\s]+$/, "").trim();
+    if (!name) {
+      // Fallback: rimuovi il match e usa il resto
+      name = line.replace(last[0], "").replace(/[\-–—|;,€\s]+$/, "").trim();
     }
-    const price = parsePrice(priceMatch[1]) ?? 0;
-    const unit = (priceMatch[2]?.toLowerCase() as "kg" | "pz" | undefined) ?? parseUnit(line);
-    const name = line.slice(0, line.length - priceMatch[0].length).replace(/[-|;,€\s]+$/, "").trim();
     if (name) out.push({ name, price, unit });
   }
   return dedupProducts(out);
@@ -233,4 +237,45 @@ export async function extractPdfText(file: File): Promise<string> {
     out += lines.join("\n") + "\n";
   }
   return out;
+}
+
+/* ============ XLSX text extraction (lazy) ============ */
+export async function extractXlsxText(file: File): Promise<string> {
+  const XLSX: any = await import("xlsx");
+  const buf = await file.arrayBuffer();
+  const wb = XLSX.read(buf, { type: "array" });
+  const lines: string[] = [];
+  for (const sheetName of wb.SheetNames) {
+    const ws = wb.Sheets[sheetName];
+    // CSV-style output: separatore virgola, header preservato.
+    const csv: string = XLSX.utils.sheet_to_csv(ws, { FS: "," });
+    if (csv.trim()) lines.push(csv);
+  }
+  return lines.join("\n");
+}
+
+/* ============ File router (extension-based) ============
+   Restituisce testo "incollabile" da un file caricato/draggato.
+   Per immagini (JPG/PNG/JPEG) ritorna stringa vuota — l'OCR non è
+   disponibile in demo. */
+export type ExtractResult = { text: string; kind: "csv" | "text" | "xlsx" | "pdf" | "image" | "unknown" };
+
+export async function extractFromFile(file: File): Promise<ExtractResult> {
+  const name = file.name.toLowerCase();
+  const type = (file.type || "").toLowerCase();
+  if (name.endsWith(".xlsx") || name.endsWith(".xls") || type.includes("sheet") || type.includes("excel")) {
+    return { text: await extractXlsxText(file), kind: "xlsx" };
+  }
+  if (name.endsWith(".pdf") || type === "application/pdf") {
+    return { text: await extractPdfText(file), kind: "pdf" };
+  }
+  if (name.endsWith(".csv") || type === "text/csv") {
+    return { text: await file.text(), kind: "csv" };
+  }
+  if (type.startsWith("image/") || /\.(png|jpg|jpeg|webp|gif)$/.test(name)) {
+    return { text: "", kind: "image" };
+  }
+  // Default: prova come testo.
+  try { return { text: await file.text(), kind: "text" }; }
+  catch { return { text: "", kind: "unknown" }; }
 }

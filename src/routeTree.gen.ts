@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ScontriniRouteImport } from './routes/scontrini'
 import { Route as ReportRouteImport } from './routes/report'
 import { Route as ProduzioneRouteImport } from './routes/produzione'
 import { Route as ProdottiRouteImport } from './routes/prodotti'
@@ -31,6 +32,11 @@ import { Route as B2bRouteImport } from './routes/b2b'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 
+const ScontriniRoute = ScontriniRouteImport.update({
+  id: '/scontrini',
+  path: '/scontrini',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ReportRoute = ReportRouteImport.update({
   id: '/report',
   path: '/report',
@@ -159,6 +165,7 @@ export interface FileRoutesByFullPath {
   '/prodotti': typeof ProdottiRoute
   '/produzione': typeof ProduzioneRoute
   '/report': typeof ReportRoute
+  '/scontrini': typeof ScontriniRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -182,6 +189,7 @@ export interface FileRoutesByTo {
   '/prodotti': typeof ProdottiRoute
   '/produzione': typeof ProduzioneRoute
   '/report': typeof ReportRoute
+  '/scontrini': typeof ScontriniRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -206,6 +214,7 @@ export interface FileRoutesById {
   '/prodotti': typeof ProdottiRoute
   '/produzione': typeof ProduzioneRoute
   '/report': typeof ReportRoute
+  '/scontrini': typeof ScontriniRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -231,6 +240,7 @@ export interface FileRouteTypes {
     | '/prodotti'
     | '/produzione'
     | '/report'
+    | '/scontrini'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -254,6 +264,7 @@ export interface FileRouteTypes {
     | '/prodotti'
     | '/produzione'
     | '/report'
+    | '/scontrini'
   id:
     | '__root__'
     | '/'
@@ -277,6 +288,7 @@ export interface FileRouteTypes {
     | '/prodotti'
     | '/produzione'
     | '/report'
+    | '/scontrini'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -301,10 +313,18 @@ export interface RootRouteChildren {
   ProdottiRoute: typeof ProdottiRoute
   ProduzioneRoute: typeof ProduzioneRoute
   ReportRoute: typeof ReportRoute
+  ScontriniRoute: typeof ScontriniRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/scontrini': {
+      id: '/scontrini'
+      path: '/scontrini'
+      fullPath: '/scontrini'
+      preLoaderRoute: typeof ScontriniRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/report': {
       id: '/report'
       path: '/report'
@@ -477,6 +497,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProdottiRoute: ProdottiRoute,
   ProduzioneRoute: ProduzioneRoute,
   ReportRoute: ReportRoute,
+  ScontriniRoute: ScontriniRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
