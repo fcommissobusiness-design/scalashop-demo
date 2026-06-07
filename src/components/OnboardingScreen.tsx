@@ -226,21 +226,23 @@ export function OnboardingScreen({ userId, onDone }: { userId: string; onDone: (
           <div>
             <Label>Carica il tuo listino prodotti <span className="opacity-60 normal-case font-normal">(opzionale)</span></Label>
             <p className="text-xs text-muted-foreground mb-2">
-              CSV o PDF, oppure incolla il listino qui sotto. Cercheremo di leggere nome, prezzo e — se presenti — categoria, costo e unità.
+              CSV, XLSX, PDF, JPG/PNG: carica, trascina o incolla. Per le immagini, copia/incolla il testo qui sotto.
             </p>
             <div className="flex flex-wrap gap-2 mb-2">
               <button type="button" onClick={() => productsFileRef.current?.click()}
                 className="px-3 py-2 rounded-lg bg-white border border-border text-sm font-medium hover:border-brand-gold">
-                {productsParsing ? "Lettura…" : "Carica CSV o PDF"}
+                {productsParsing ? "Lettura…" : "Carica file (CSV, XLSX, PDF, JPG, PNG)"}
               </button>
-              <input ref={productsFileRef} type="file" accept=".csv,.txt,.pdf,text/csv,text/plain,application/pdf"
+              <input ref={productsFileRef} type="file"
+                accept=".csv,.txt,.pdf,.xlsx,.xls,.jpg,.jpeg,.png,text/csv,text/plain,application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,image/jpeg,image/png"
                 className="hidden"
                 onChange={(e) => { const f = e.target.files?.[0]; if (f) onProductsFile(f); e.target.value = ""; }} />
             </div>
             <textarea value={productsText} onChange={e => setProductsText(e.target.value)}
-              placeholder={"Incolla qui il listino, una riga per prodotto.\nEs.\nMozzarella di bufala  14,50 kg\nRicotta  1,50 pz\nPane casareccio  3,00 kg"}
+              {...makeDragHandlers(onProductsFile)}
+              placeholder={"Trascina qui un file o incolla il listino, una riga per prodotto.\nEs.\nMozzarella di bufala  14,50 kg\nRicotta  1,50 pz\nPane casareccio  3,00 kg"}
               rows={6}
-              className="w-full px-3 py-2 rounded-lg bg-white border border-border text-sm text-brand-green outline-none focus:border-brand-gold resize-none overflow-auto font-mono"
+              className="w-full px-3 py-2 rounded-lg bg-white border border-dashed border-brand-gold/40 text-sm text-brand-green outline-none focus:border-brand-gold resize-none overflow-auto font-mono"
               style={{ height: "180px" }} />
             {productsMsg && <p className="text-xs text-muted-foreground mt-1">{productsMsg}</p>}
           </div>
@@ -254,20 +256,22 @@ export function OnboardingScreen({ userId, onDone }: { userId: string; onDone: (
           </div>
           {hasClientsList === "si" && (
             <div>
-              <Label>Incolla qui l'elenco dei tuoi clienti <span className="opacity-60 normal-case font-normal">(o carica un CSV)</span></Label>
+              <Label>Incolla, trascina o carica l'elenco dei tuoi clienti <span className="opacity-60 normal-case font-normal">(CSV, XLSX, PDF, JPG, PNG)</span></Label>
               <div className="flex flex-wrap gap-2 mb-2">
                 <button type="button" onClick={() => clientsFileRef.current?.click()}
                   className="px-3 py-2 rounded-lg bg-white border border-border text-sm font-medium hover:border-brand-gold">
-                  Carica CSV
+                  Carica file
                 </button>
-                <input ref={clientsFileRef} type="file" accept=".csv,.txt,text/csv,text/plain"
+                <input ref={clientsFileRef} type="file"
+                  accept=".csv,.txt,.pdf,.xlsx,.xls,.jpg,.jpeg,.png,text/csv,text/plain,application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,image/jpeg,image/png"
                   className="hidden"
                   onChange={(e) => { const f = e.target.files?.[0]; if (f) onClientsFile(f); e.target.value = ""; }} />
               </div>
               <textarea value={clientsText} onChange={e => setClientsText(e.target.value)}
-                placeholder={"Una riga per cliente.\nEs.\nMario Rossi  3331234567\nLucia Bianchi  3399876543\nGiuseppe Verdi"}
+                {...makeDragHandlers(onClientsFile)}
+                placeholder={"Trascina qui un file o incolla l'elenco.\nEs.\nMario Rossi  3331234567\nLucia Bianchi  3399876543\nGiuseppe Verdi"}
                 rows={6}
-                className="w-full px-3 py-2 rounded-lg bg-white border border-border text-sm text-brand-green outline-none focus:border-brand-gold resize-none overflow-auto font-mono"
+                className="w-full px-3 py-2 rounded-lg bg-white border border-dashed border-brand-gold/40 text-sm text-brand-green outline-none focus:border-brand-gold resize-none overflow-auto font-mono"
                 style={{ height: "180px" }} />
               {clientsMsg && <p className="text-xs text-muted-foreground mt-1">{clientsMsg}</p>}
             </div>
