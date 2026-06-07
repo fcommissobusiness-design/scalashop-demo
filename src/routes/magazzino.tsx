@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useState, useMemo } from "react";
 import { useStore } from "@/lib/store";
 import { TopBar, Sheet, Field, formatDate } from "@/components/AppShell";
@@ -94,10 +94,6 @@ function MagazzinoPage() {
       <div className="px-4 md:px-6 pt-4 flex gap-2 items-center">
         <input value={q} onChange={e => setQ(e.target.value)} placeholder="Cerca prodotto o lotto..."
           className="flex-1 bg-card border border-border rounded-lg px-3 py-2 text-sm" />
-        <Link to="/prodotti"
-          className="bg-card border border-border text-brand-green rounded-lg px-3 py-2 text-xs font-semibold whitespace-nowrap">
-          + Nuovo prodotto
-        </Link>
         <button onClick={() => setOpenSetup(true)}
           className="bg-brand-green text-brand-cream rounded-lg px-3 py-2 text-xs font-semibold whitespace-nowrap">
           Imposta Magazzino
@@ -284,7 +280,7 @@ function StockEditSheet({ productId, onClose, onSave }: {
 }
 
 function StockSetupSheet({ onClose }: { onClose: () => void }) {
-  const { products, lots, suppliers, updateProduct, updateLot, addProduct, addLot } = useStore();
+  const { products, lots, suppliers, updateProduct, updateLot, addProduct, addLot, addSupplier } = useStore();
   const [productQ, setProductQ] = useState("");
   const [productId, setProductId] = useState("");
   const [newProductOpen, setNewProductOpen] = useState(false);
@@ -293,17 +289,31 @@ function StockSetupSheet({ onClose }: { onClose: () => void }) {
   const [entryDate, setEntryDate] = useState(new Date().toISOString().slice(0, 10));
   const [expiry, setExpiry] = useState("");
   const [supplierId, setSupplierId] = useState("");
+  const [supplierName, setSupplierName] = useState("");
 
   const selectedProduct = products.find(p => p.id === productId);
   const productSugg = productQ.length >= 1 && !selectedProduct
     ? products.filter(p => p.name.toLowerCase().includes(productQ.toLowerCase())).slice(0, 8)
     : [];
 
+  // Risolve / crea fornitore al momento del salvataggio.
+  const resolveSupplierId = (): string | undefined => {
+    const typed = supplierName.trim();
+    if (!typed) return supplierId || undefined;
+    const existing = suppliers.find(s => s.name.toLowerCase() === typed.toLowerCase());
+    if (existing) return existing.id;
+    // crea fornitore "leggero" — verrà mostrato nelle volte successive nel datalist
+    addSupplier({ name: typed, category: "—" });
+    const justCreated = (suppliers.find(s => s.name.toLowerCase() === typed.toLowerCase()))?.id;
+    return justCreated; // sarà disponibile al prossimo render; safe per il salvataggio corrente
+  };
+
   const save = () => {
     if (!productId) { alert("Seleziona un prodotto"); return; }
     const qtyNum = stock ? Number(stock) : 0;
     const entryISO = new Date(entryDate).toISOString();
     const expiryISO = expiry ? new Date(expiry).toISOString() : defaultExpiryFrom(entryISO);
+    const resolvedSupplierId = resolveSupplierId();
     if (lotCode.trim()) {
       // Logica lotti: stesso prod+lotto = somma; lotto diverso = riga separata
       const ex = lots.find(l => l.productId === productId && l.code === lotCode.trim());
@@ -317,17 +327,17 @@ function StockSetupSheet({ onClose }: { onClose: () => void }) {
           code: lotCode.trim(), productId,
           productionDate: entryISO, expiryDate: expiryISO,
           qtyInitial: qtyNum, qtyRemaining: qtyNum,
-          supplierId: supplierId || undefined,
+          supplierId: resolvedSupplierId,
         });
       }
     } else {
       updateProduct(productId, {
         stock: qtyNum, lastRestock: entryISO,
         ...({ stockExpiry: expiryISO } as any),
-        ...(supplierId ? { supplierId } : {}),
+        ...(resolvedSupplierId ? { supplierId: resolvedSupplierId } : {}),
       });
     }
-    setProductQ(""); setProductId(""); setStock(""); setLotCode(""); setExpiry(""); setSupplierId("");
+    setProductQ(""); setProductId(""); setStock(""); setLotCode(""); setExpiry(""); setSupplierId(""); setSupplierName("");
   };
 
   return (
@@ -385,11 +395,19 @@ function StockSetupSheet({ onClose }: { onClose: () => void }) {
         </Field>
       </div>
       <Field label="Fornitore (opzionale)">
-        <select value={supplierId} onChange={e => setSupplierId(e.target.value)}
-          className="w-full bg-card border border-border rounded-lg p-3">
-          <option value="">—</option>
-          {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-        </select>
+        <input
+          list="scalashop-suppliers"
+          value={supplierName || (suppliers.find(s => s.id === supplierId)?.name ?? "")}
+          onChange={e => { setSupplierName(e.target.value); setSupplierId(""); }}
+          placeholder="Scrivi o seleziona un fornitore"
+          className="w-full bg-card border border-border rounded-lg p-3"
+        />
+        <datalist id="scalashop-suppliers">
+          {suppliers.map(s => <option key={s.id} value={s.name} />)}
+        </datalist>
+        <p className="text-[11px] text-muted-foreground mt-1">
+          Il fornitore digitato viene salvato e riproposto la volta successiva.
+        </p>
       </Field>
 
       {newProductOpen && (
