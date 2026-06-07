@@ -1,105 +1,68 @@
-## Stato attuale (verifica P0)
+# Piano ScalaShop Demo — 27 punti
 
-Analizzato il codice — la maggior parte dei fix P0 è già in piedi:
+Lavoro principalmente per **sottrazione e standardizzazione**, riusando store/componenti esistenti. Stimo ~15 file toccati, nessuna migration backend.
 
-- `consegne.tsx` riga 146–150: `DeliverySheet` ha già la firma `Omit<Delivery,"id"|"createdAt"> | Partial<Delivery>`. Nessun errore TS residuo riconducibile a riga 137 (riga 137 è ora il componente `Kpi`).
-- `AppShell.tsx`: `/consegne` è già in `NAV` (sidebar desktop) e in `MOBILE_NAV` (bottom nav mobile, escluso solo `/admin` e `/report`).
-- `store.ts`: `deliveries`, `addDelivery`, `updateDelivery`, `deleteDelivery` esposti correttamente, con migrazione e seed.
-- `data.ts`: `Delivery`, `DeliveryStatus`, `DeliveryPayment`, `SEED_DELIVERIES` definiti.
+## Fase 1 — Infrastruttura demo (file nuovi/condivisi)
 
-Resta da fare:
-1. Verifica build TS (un giro tipi a fine intervento).
-2. Aggiungere `/report` al `MOBILE_NAV` (è solo desktop ora) — lo chiede esplicitamente più sotto come parte del gestionale completo.
+1. **`src/lib/demo-flags.ts`** (nuovo): elenco rotte bloccate, helper `isLocked(path)`, helper `getTrialDaysLeft(userId)` (legge `completedAt` da onboarding, 14gg), helper `getBusinessName(userId)`.
+2. **`src/components/LockedSection.tsx`** (nuovo): pagina-blocco con sfondo blur + banner centrale "Per sbloccare anche questa funzionalità, attiva il piano Starter di ScalaShop." + CTA `button` (no link).
+3. **`src/components/PromoMarquee.tsx`** (nuovo): barra gialla scorrevole con le 5 frasi richieste. CSS keyframes (no libreria).
+4. **`src/components/DemoGate.tsx`** (nuovo): wrapper usato in `__root.tsx` che, per le rotte in lockedRoutes, sostituisce il contenuto con `LockedSection`.
 
-## Approccio generale P1 + P2
+## Fase 2 — Onboarding & import (punti 1, 2)
 
-Tutto resta locale, basato su `localStorage` (`sciorio-hq-v4` con migrazione da v3), nessun backend, nessuna nuova dipendenza pesante. Pattern coerente con l'esistente: tipi in `data.ts`, CRUD in `store.ts`, una route per sezione, `Sheet`/`Field`/`Fab`/`TopBar` riutilizzati, `WhatsAppDialog` riusato dove serve.
+5. **`src/lib/demo-parsers.ts`**: estendere per XLSX (`xlsx` se già in deps, altrimenti `sheetjs`) e immagini (OCR via `tesseract.js`? — **troppo pesante**, fallback: per JPG/PNG mostriamo solo upload + invito a incollare testo; per PDF già ok). **Decisione pragmatica:** XLSX sì (libreria leggera), immagini accettate ma con messaggio "Riconoscimento immagini in arrivo — incolla il testo qui sotto". Questo evita 5MB di tesseract.
+6. **Bug import testuale prodotti**: il parser attuale richiede regex `\d+[.,]\d{1,2}` (es. "15,00"). Il formato "15€/kg" senza decimali fallisce. Correggere regex per accettare `\d+(?:[.,]\d{1,2})?` ed estrarre unit anche con `/kg`.
+7. **`OnboardingScreen.tsx`**: aggiungere drag&drop su entrambi i textarea (handler `onDragOver`/`onDrop`), aggiornare `accept` con xlsx/jpg/png, parser routing per estensione.
+8. **Persistenza import**: verificare che `addClient`/`addProduct` dello store persistano (cloudSync). Già ok.
 
-Per non gonfiare la bottom nav mobile (già 6 voci), aggiungo una voce **"Più"** che apre un menu con le sezioni secondarie. Sidebar desktop le elenca tutte.
+## Fase 3 — Sidebar & rotte bloccate (punti 3, 4, 5, 19, 24)
 
-## Phase 1 — Foundation: data + store + utility
+9. **`AppShell.tsx`**: riscrivere la sidebar con la struttura a 4 gruppi richiesta (OPERATIVO / MAGAZZINO E PRODOTTI / VENDITE ONLINE / FINANZA E AMMINISTRAZIONE), incluse voci bloccate con icona lucchetto. Aggiungere voce **Pagamenti** (route nuova). Voce "Amministrazione" → "Pannello di Controllo" (già fatto, verificare).
+10. **Rotte bloccate**: in ogni route file della lista bloccati, sostituire il body con `<LockedSection />`. Più semplice: gate nel route component invece di toccare 13 file uno per uno → fare in `__root.tsx` via `DemoGate`.
+11. **Mobile bottom-nav**: aggiornare le 6 voci principali se serve (Dashboard, Ordini, Scontrini, Consegne, Cassa, Più).
 
-**`src/lib/data.ts`** — nuovi tipi e seed:
+## Fase 4 — Dashboard (punti 6, 7, 8, 22)
 
-- `Production { id, date, productId, qtyPlanned, qtyActual?, orderIds[], status: "da_preparare"|"preparato"|"completato", notes? }`
-- Estensione `Product`: `stock?, stockMin?, unitStock?, supplierId?, lastRestock?`
-- `Supplier { id, name, category, phone, contactName?, productIds[], notes?, lastOrderDate? }`
-- `CashEntry { id, date, type:"entrata"|"uscita", category, amount, method:"contanti"|"pos"|"bonifico"|"carta"|"altro", notes?, refType?:"order"|"delivery"|"casual"|"payment", refId? }`
-- `B2BClient { id, name, contactName?, phone, zone?, priceListId?, deliveryDays:string[], status:"prospect"|"attivo"|"sospeso", notes?, history:{date,total,note?}[] }`
-- `SupplierPayment { id, date, beneficiary, beneficiaryType:"fornitore"|"consulente"|"servizio"|"altro", category, amount, method, status:"da_pagare"|"pagato"|"scaduto", dueDate?, recurrence:"una_tantum"|"settimanale"|"mensile"|"annuale", notes?, document?:"fattura"|"ricevuta"|"preventivo"|"nessuno", supplierId? }`
-- `OrderSource` esteso con `"sito"|"b2b"`.
-- Seed minimi realistici per ciascuno (3–5 record) + alcuni `cost` mancanti su prodotti esistenti per consentire calcolo margine giornaliero.
+12. **`routes/index.tsx`**:
+    - Riscrivere banner trial: testo dinamico "Stai provando ScalaShop. Ti restano X giorni…" con sfondo `bg-brand-gold` o `bg-brand-green` per visibilità.
+    - Aggiungere bordo `border-brand-green/30` ai box Ritiri/Scontrini/Consegne (anche stato vuoto).
+    - Rimuovere "Nuovo Pagamento" dai quick-action.
+13. **Promo marquee**: inserire `<PromoMarquee />` in `__root.tsx` (compare ovunque automaticamente).
 
-**`src/lib/store.ts`** — estensione `Store`, migrazione `sciorio-hq-v3 → v4` (fallback con default vuoti per i nuovi campi), CRUD per ognuno (`addProduction/updateProduction/deleteProduction`, `addSupplier/...`, `addCashEntry/...`, `addB2BClient/...`, `addSupplierPayment/...`). Quando un `Order` o `CasualSale` viene chiuso, helper opzionale `recordIncome()` che crea `CashEntry` collegata (chiamata esplicita dalle UI di chiusura, non automatica per non rompere il flusso esistente).
+## Fase 5 — Branding nome attività (punto 23)
 
-**`src/lib/metrics.ts`** — selettori derivati nuovi:
+14. **`AppShell.tsx`**: sotto "ScalaShop" nella sidebar mostrare `businessName` da onboarding. In header pagina (top-right) mostrare lo stesso in modo discreto.
 
-- `productionToday(date)`, `mozzarellaKgToday()`
-- `lowStockProducts()`, `outOfStockProducts()`
-- `cashFlowDay(date)`, `cashFlowMonth(date)`, `monthlyBalance()`
-- `supplierPaymentsDue()`, `supplierPaymentsOverdue()`, `recurringMonthly()`
-- `topSuppliersByCost()`, `topB2BByRevenue()`
-- `grossMarginEstimated(period)`, `netBalanceEstimated(period)` (lordo – uscite registrate)
-- `pendingDeliveryRevenue()`, `averageReceipt()`
+## Fase 6 — Sezioni accessibili (punti 9-18, 20, 21)
 
-## Phase 2 — Nuove sezioni (8 route)
+15. **`routes/magazzino.tsx`**: rimuovere "Nuovo Prodotto" separato, lasciare solo "Imposta Magazzino". Campo fornitore: combobox con datalist (fornitori già usati, salvataggio implicito tramite store).
+16. **`routes/prodotti.tsx`**: rimuovere filtri e panoramiche (più venduti / profittevoli / mai venduti). Pulsante "+" → naviga a `/magazzino` invece di entrate-merci.
+17. **`routes/ordini.tsx`** (nuovo ordine, no prodotti): redirect/CTA verso `/magazzino` invece di entrate-merci. Aggiungere bordo ai 4 KPI box.
+18. **`routes/clienti.tsx`**: rimuovere filtri segment.
+19. **`routes/consegne.tsx`**: filtri come pill con bordo gold quando attivi, rimuovere label "Status". Bordo ai 4 KPI box.
+20. **`routes/incassi.tsx` (Scontrini/Cassa)**: la voce sidebar "Scontrini" punta qui ma mostra "Uscite" — rinominare titolo a "Scontrini", rimuovere KPI "Da pagare/Scaduti/Saldati", sostituire con "Completati / Fatturato generato / Scontrino medio", bordo box.
 
-Una route per voce (nuovo file in `src/routes/`), tutte con `TopBar`, lista filtrabile, `Sheet` con `Field` per CRUD, `Fab` per nuovo. Stile e densità identici alle sezioni esistenti.
+## Fase 7 — Nuova route Pagamenti (punto 19)
 
-1. `produzione.tsx` — lista per giorno, badge stato, KPI in alto (kg mozzarella oggi, da preparare, completati, delta previsto/effettivo). "Genera da ordini di oggi" come quick action.
-2. `magazzino.tsx` — lista prodotti con `stock`, `stockMin`, alert sotto soglia/esauriti, link a fornitore, modifica rapida giacenza.
-3. `fornitori.tsx` — anagrafica fornitori, azioni WhatsApp/Chiama, "Nuovo ordine fornitore" che apre Sheet con nota libera + data + (futuro link a `SupplierPayment`).
-4. `incassi.tsx` — prima nota entrata/uscita con KPI giorno/mese e saldo, filtro categoria/metodo.
-5. `fiscale.tsx` — sola lettura riassuntiva (fatturato stimato, incassi registrati, scontrini, ordini ritirati, consegne incassate, promemoria libero) con disclaimer fisso "Dati gestionali interni, non sostituiscono commercialista o registratore fiscale".
-6. `b2b.tsx` — lista clienti business con stato/zona, azioni WhatsApp/Chiama, "Nuovo ordine B2B" (riusa `Order` con `source:"b2b"` e `clientId` punta al `B2BClient` via prefisso).
-7. `finanza.tsx` — dashboard finanziaria read-only: fatturato generato, fatturato stimato, margine lordo stimato, uscite (merce/consulenti/altro), saldo netto stimato, scontrino medio, top prodotti per margine, top clienti, top B2B, consegne da incassare.
-8. `pagamenti.tsx` — pagamenti fornitori/consulenti con stato (da pagare / pagato / scaduto, calcolato da `dueDate` vs oggi), ricorrenze, alert in cima, KPI mese, beneficiari più costosi.
+21. **`routes/pagamenti.tsx`**: già esiste, sovrascrivere body con `<LockedSection />` (gestito via DemoGate).
 
-**Navigazione**: sidebar desktop elenca tutte le voci raggruppate (Operativo / Anagrafiche / Finanza / Sistema). Bottom nav mobile mantiene 6 slot: `Home`, `Ordini`, `Consegne`, `Clienti`, `Prodotti`, `Più`. `Più` è un Sheet con tutte le altre sezioni.
+## Fase 8 — Mobile & QA (punti 26, 27)
 
-## Phase 3 — Miglioramenti sezioni esistenti
+22. Test visivo della sidebar mobile, bottom-nav, dashboard, ordini.
+23. Verifica che cloudSync/login/onboarding non siano toccati.
 
-Modifiche puntuali, senza riscritture:
+## Decisioni pragmatiche per limitare consumo crediti
 
-- `ordini.tsx`: stato `pronto` già presente in tipi → assicurare presenza nei filtri/transizioni; selettore `source` con tutte le origini incl. `b2b`/`sito`; bottone "Duplica" già nello store, esporre nell'azione rapida; al passaggio a `ritirato` chiamare `recordIncome()` opzionale (toggle "registra incasso").
-- `clienti.tsx`: badge "caldo / inattivo / top spender / premio pronto" calcolati da `metrics`, riga "Prodotti preferiti" derivata dagli ordini, LTV già calcolato → esporre in card.
-- `prodotti.tsx`: nuovi campi `stock`, `stockMin`, `supplierId` (select da `suppliers`), toggle `magnet`/`seasonal` già nei tipi → esporre nel form.
-- `offerte.tsx`: campi `targetSegment`, `channel`, `startDate`, `endDate` già in `Bundle` → esporre nel form; bottone "Genera messaggio WhatsApp promo" che apre `WhatsAppDialog` con template `promo_bundle`.
-- `admin.tsx`: cambio PIN reale (usa `setPin`), export/import JSON, reset doppia conferma, riepilogo `storageInfo()`, versione hardcoded `v0.4.0`.
+- **OCR immagini**: NON implemento (tesseract = 5MB+). Accetto upload JPG/PNG ma mostro messaggio "incolla il testo per ora". Riporto nel report finale.
+- **XLSX**: aggiungo `xlsx` (~400KB, ok).
+- **Gate rotte bloccate**: via `DemoGate` in `__root.tsx`, NON tocco 13 file route uno per uno.
+- **NO migration backend**.
+- **NO refactor architetturale**.
 
-## Out of scope
+## File toccati (stima)
 
-Nessun backend, Supabase, autenticazione multi-utente, push, AI, ecommerce, grafici complessi, PDF, esportazioni avanzate, calcoli IVA reali, integrazione registratore fiscale.
+Nuovi: `demo-flags.ts`, `LockedSection.tsx`, `PromoMarquee.tsx`, `DemoGate.tsx` (4).
+Modificati: `AppShell.tsx`, `OnboardingScreen.tsx`, `demo-parsers.ts`, `__root.tsx`, `index.tsx`, `prodotti.tsx`, `clienti.tsx`, `consegne.tsx`, `ordini.tsx`, `incassi.tsx`, `magazzino.tsx`, `package.json` (per xlsx) (12).
 
-## Note di esecuzione
-
-- Migrazione store: leggere v4, fallback v3 (con riempimento campi nuovi a `[]`/`undefined`), poi v2 legacy. Mai distruggere dati esistenti.
-- I nuovi `CashEntry` collegati a ordini sono opzionali e non duplicano il `total` dell'ordine: la finanza somma incassi registrati, non totali ordini, per evitare doppio conteggio. `fiscale.tsx` mostra entrambi separatamente.
-- Tutto in italiano, branding/typografia invariati.
-- Verifica TS finale con un giro di lettura sui file toccati; nessun `any` introdotto se non nei punti già esistenti.
-
-## Diagramma navigazione
-
-```text
-Sidebar desktop                    Bottom nav mobile
-─ OPERATIVO                        [Home][Ordini][Consegne]
-  Dashboard                        [Clienti][Prodotti][Più]
-  Ordini                                            │
-  Consegne                                          ▼
-  Produzione                       Sheet "Più":
-─ ANAGRAFICHE                       Offerte · Produzione
-  Clienti                           Magazzino · Fornitori
-  B2B / Lidi                        B2B · Incassi · Pagamenti
-  Prodotti                          Fiscale · Finanza · Report
-  Magazzino                         Admin
-  Fornitori
-  Offerte
-─ FINANZA
-  Incassi
-  Pagamenti
-  Finanza
-  Fiscale
-  Report
-─ SISTEMA
-  Amministrazione
-```
+Procedo?
