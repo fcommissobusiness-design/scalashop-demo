@@ -15,7 +15,7 @@ export const Route = createFileRoute("/incassi")({ component: CassaPage });
 type Movement = {
   id: string;
   date: string;
-  type: "entrata" | "uscita";
+  kind: "ordine" | "scontrino" | "consegna";
   amount: number;
   label: string;
   meta?: string;
@@ -23,7 +23,7 @@ type Movement = {
 };
 
 function CassaPage() {
-  const { orders, casualSales, supplierPayments, cashEntries, products, bundles, suppliers, addOrder, addCasualSale, addClient, addSupplierPayment } = useStore();
+  const { orders, casualSales, deliveries, products, bundles, suppliers, addOrder, addCasualSale, addClient, addSupplierPayment } = useStore();
 
   const todayIso = new Date().toISOString().slice(0, 10);
   const [tfId, setTfId] = useState<TimeFrameId>("thisMonth");
@@ -34,8 +34,7 @@ function CassaPage() {
     [tfId, cs, ce],
   );
 
-
-  const [filter, setFilter] = useState<"all" | "entrata" | "uscita">("all");
+  const [filter, setFilter] = useState<"all" | "ordine" | "scontrino" | "consegna">("all");
   const [pickerOpen, setPickerOpen] = useState(false);
   const [openOrder, setOpenOrder] = useState(false);
   const [editOrderId, setEditOrderId] = useState<string | null>(null);
@@ -55,7 +54,7 @@ function CassaPage() {
       out.push({
         id: `ord_${o.id}`,
         date: o.pickupDate,
-        type: "entrata",
+        kind: "ordine",
         amount: o.total,
         label: "Ordine",
         meta: o.paymentMethod ?? "—",
@@ -69,7 +68,7 @@ function CassaPage() {
       out.push({
         id: `sale_${s.id}`,
         date: s.date,
-        type: "entrata",
+        kind: "scontrino",
         amount: s.total,
         label: "Scontrino",
         meta: s.paymentMethod ?? "—",
@@ -77,58 +76,30 @@ function CassaPage() {
       });
     }
 
-    // Uscite da pagamenti fornitori (esclusi da_pagare)
-    for (const p of supplierPayments) {
-      if (p.status === "da_pagare") continue;
-      if (!inFrame(p.date, tf)) continue;
+    // Entrate da consegne consegnate e pagate
+    for (const d of deliveries) {
+      if (d.status !== "consegnata") continue;
+      if (d.payment === "da_pagare") continue;
+      if (!inFrame(d.date, tf)) continue;
+      const linkedOrder = d.orderId ? orders.find(o => o.id === d.orderId) : undefined;
       out.push({
-        id: `pay_${p.id}`,
-        date: p.date,
-        type: "uscita",
-        amount: p.amount,
-        label: p.beneficiary || p.category,
-        meta: `${p.category} · ${p.method}`,
-      });
-    }
-
-    // Movimenti manuali residui (cashEntries) — supporto storico
-    for (const e of cashEntries) {
-      if (!inFrame(e.date, tf)) continue;
-      out.push({
-        id: `ce_${e.id}`,
-        date: e.date,
-        type: e.type,
-        amount: e.amount,
-        label: e.category,
-        meta: `${e.method}${e.notes ? ` · ${e.notes}` : ""}`,
+        id: `del_${d.id}`,
+        date: d.date,
+        kind: "consegna",
+        amount: linkedOrder ? linkedOrder.total : 0,
+        label: "Consegna",
+        meta: d.clientNameInput || `Cliente ${d.clientId}`,
       });
     }
 
     return out.sort((a, b) => +new Date(b.date) - +new Date(a.date));
-  }, [orders, casualSales, supplierPayments, cashEntries, products, bundles, tf]);
+  }, [orders, casualSales, deliveries, products, bundles, tf]);
 
-  // ============ KPI ============
-  const kpi = useMemo(() => {
-    let entrate = 0, uscite = 0, ricavi = 0, margine = 0;
-    for (const m of movements) {
-      if (m.type === "entrata") {
-        entrate += m.amount;
-        if (m.id.startsWith("ord_") || m.id.startsWith("sale_")) {
-          ricavi += m.amount;
-          margine += m.margin ?? 0;
-        } else {
-          ricavi += m.amount;
-        }
-      } else {
-        uscite += m.amount;
-      }
-    }
-    const utile = margine - uscite;
-    return { entrate, uscite, ricavi, utile };
-  }, [movements]);
+  // ============ KPI: solo entrate totali ============
+  const entrateTot = useMemo(() => movements.reduce((s, m) => s + m.amount, 0), [movements]);
 
   const visibleList = useMemo(
-    () => filter === "all" ? movements : movements.filter(m => m.type === filter),
+    () => filter === "all" ? movements : movements.filter(m => m.kind === filter),
     [movements, filter],
   );
 
@@ -151,19 +122,19 @@ function CassaPage() {
         )}
       </div>
 
-
-      <div className="p-4 md:p-6 grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Kpi label="Entrate" value={formatEuro(kpi.entrate)} />
-        <Kpi label="Uscite" value={formatEuro(kpi.uscite)} danger />
-        <Kpi label="Ricavi" value={formatEuro(kpi.ricavi)} />
-        <Kpi label="Utile" value={formatEuro(kpi.utile)} highlight />
+      <div className="p-4 md:p-6">
+        <div className="rounded-xl p-4 bg-brand-green text-brand-cream text-center">
+          <p className="text-[11px] uppercase tracking-wide text-brand-gold">Entrate totali</p>
+          <p className="font-display text-3xl mt-1 text-brand-gold">{formatEuro(entrateTot)}</p>
+        </div>
       </div>
 
-      <div className="px-4 md:px-6 flex gap-2 pb-2">
+      <div className="px-4 md:px-6 flex flex-wrap gap-2 pb-2">
         {([
           { id: "all", label: "Tutti" },
-          { id: "entrata", label: "Entrate" },
-          { id: "uscita", label: "Uscite" },
+          { id: "ordine", label: "Ordini" },
+          { id: "scontrino", label: "Scontrini" },
+          { id: "consegna", label: "Consegne" },
         ] as const).map(t => (
           <button key={t.id} onClick={() => setFilter(t.id)}
             className={`px-3 py-1.5 rounded-full text-xs font-semibold ${filter === t.id ? "bg-brand-green text-brand-cream" : "bg-card text-foreground/70"}`}>
@@ -177,18 +148,18 @@ function CassaPage() {
           <p className="text-center text-sm text-muted-foreground py-8">Nessun movimento nel periodo.</p>
         )}
         {visibleList.map(m => {
-          const openable = m.id.startsWith("sale_") || m.id.startsWith("ord_");
+          const openable = m.kind === "scontrino" || m.kind === "ordine";
           const onOpen = () => {
-            if (m.id.startsWith("sale_")) { setEditSaleId(m.id.replace(/^sale_/, "")); setOpenSale(true); }
-            else if (m.id.startsWith("ord_")) { setEditOrderId(m.id.replace(/^ord_/, "")); }
+            if (m.kind === "scontrino") { setEditSaleId(m.id.replace(/^sale_/, "")); setOpenSale(true); }
+            else if (m.kind === "ordine") { setEditOrderId(m.id.replace(/^ord_/, "")); }
           };
           return (
             <button key={m.id} disabled={!openable} onClick={onOpen}
               onPointerUp={(e) => { if (openable && e.pointerType === "touch") onOpen(); }}
-              className="w-full text-left bg-card rounded-xl p-3 flex justify-between items-center gap-3 disabled:cursor-default">
+              className="w-full text-left bg-card border border-border rounded-xl p-3 flex justify-between items-center gap-3 disabled:cursor-default">
               <div className="min-w-0">
-                <p className={`font-display text-base ${m.type === "entrata" ? "text-success" : "text-danger"}`}>
-                  {m.type === "entrata" ? "+" : "−"} {formatEuro(m.amount)}
+                <p className="font-display text-base text-success">
+                  + {formatEuro(m.amount)}
                 </p>
                 <p className="text-xs text-muted-foreground truncate">
                   {m.label}{m.meta ? ` · ${m.meta}` : ""}
@@ -240,7 +211,6 @@ function CassaPage() {
           }} />
       )}
 
-
       {openPay && (
         <PaySheet mode="new" suppliers={suppliers}
           onClose={() => { setOpenPay(false); setPickerOpen(false); }}
@@ -254,11 +224,3 @@ function CassaPage() {
   );
 }
 
-function Kpi({ label, value, highlight, danger }: { label: string; value: string; highlight?: boolean; danger?: boolean }) {
-  return (
-    <div className={`rounded-xl p-3 ${highlight ? "bg-brand-green text-brand-cream" : "bg-card"}`}>
-      <p className={`text-[10px] uppercase tracking-wide ${highlight ? "text-brand-gold" : "text-muted-foreground"}`}>{label}</p>
-      <p className={`font-display text-xl mt-1 ${danger ? "text-danger" : highlight ? "text-brand-gold" : "text-brand-green"}`}>{value}</p>
-    </div>
-  );
-}
