@@ -1,5 +1,5 @@
-import { createFileRoute, useSearch } from "@tanstack/react-router";
-import { useMemo, useState, useEffect } from "react";
+import { createFileRoute } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
 import { useStore } from "@/lib/store";
 import { TopBar, formatDate, Sheet, Field, Fab, formatEuro } from "@/components/AppShell";
 import { SEGMENT_META, type Client } from "@/lib/data";
