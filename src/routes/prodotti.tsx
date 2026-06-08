@@ -328,6 +328,22 @@ function ProductSheet({ product, onClose, onSave, onDelete }: {
           </ul>
         </Field>
       )}
+
+      {/* Area premium: lotti, scadenze, fornitori, movimenti */}
+      <div className="pt-2">
+        <PremiumBanner
+          title="Funzionalità disponibile nel Piano Starter"
+          text="Per gestire Magazzino, Lotti, Scadenze e Fornitori attiva il Piano Starter."
+        />
+        <div className="mt-3 grid grid-cols-2 gap-3 opacity-50 pointer-events-none select-none">
+          <Field label="Lotto"><input disabled placeholder="LOT-2026-001" className="w-full bg-card border border-border rounded-lg p-3" /></Field>
+          <Field label="Data scadenza"><input disabled type="date" className="w-full bg-card border border-border rounded-lg p-3" /></Field>
+          <Field label="Fornitore"><input disabled placeholder="—" className="w-full bg-card border border-border rounded-lg p-3" /></Field>
+          <Field label="Quantità disponibile"><input disabled placeholder="0" className="w-full bg-card border border-border rounded-lg p-3" /></Field>
+          <Field label="Carichi"><input disabled placeholder="—" className="w-full bg-card border border-border rounded-lg p-3" /></Field>
+          <Field label="Scarichi"><input disabled placeholder="—" className="w-full bg-card border border-border rounded-lg p-3" /></Field>
+        </div>
+      </div>
     </Sheet>
   );
 }
