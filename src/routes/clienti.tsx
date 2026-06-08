@@ -10,6 +10,7 @@ import {
 } from "@/lib/metrics";
 import { WhatsAppDialog } from "@/components/WhatsAppDialog";
 import { CallBtn } from "@/components/QuickActions";
+import { DemoLockOverlay } from "@/components/DemoLock";
 
 export const Route = createFileRoute("/clienti")({
   component: ClientiPage,
@@ -245,9 +246,9 @@ function ClientDetail({ client, onClose, onSave, onDelete }: {
       </div>
 
       {/* FEDELTÀ */}
-      <div className="bg-brand-cream rounded-xl p-4">
+      <div className="bg-brand-cream rounded-xl p-4 relative overflow-hidden min-h-[180px]">
         <div className="flex justify-between items-center mb-2">
-          <p className="font-display text-base text-brand-green">Cartolina fedeltà</p>
+          <p className="font-display text-base text-brand-green">Tessera fedeltà</p>
           <span className="text-xs font-semibold text-brand-gold">{stamps}/5</span>
         </div>
         <div className="flex gap-2 mb-3">
@@ -268,6 +269,7 @@ function ClientDetail({ client, onClose, onSave, onDelete }: {
         </div>
         {stamps === 4 && <p className="text-xs text-warning mt-2 font-semibold">Quasi completato — proporre prossimo acquisto</p>}
         {stamps >= 5 && <p className="text-xs text-brand-gold mt-2 font-semibold">Premio pronto: 1kg mozzarella in omaggio</p>}
+        <DemoLockOverlay feature="Tessera fedeltà" compact />
       </div>
 
       {/* DATI */}
@@ -310,22 +312,25 @@ function ClientDetail({ client, onClose, onSave, onDelete }: {
       </Field>
 
       <Field label="Prodotti preferiti (Top 3)">
-        {top3.length === 0 ? (
-          <p className="text-sm text-muted-foreground italic">Nessun ordine registrato.</p>
-        ) : (
-          <ul className="bg-card rounded-lg p-3 text-sm space-y-1">
-            {top3.map(t => (
-              <li key={t.product!.id} className="flex justify-between">
-                <span>{t.product!.name}</span>
-                <span className="text-muted-foreground">x{t.qty.toFixed(t.product!.unit === "kg" ? 1 : 0)}</span>
-              </li>
-            ))}
-          </ul>
-        )}
+        <div className="relative min-h-[120px]">
+          {top3.length === 0 ? (
+            <p className="text-sm text-muted-foreground italic">Nessun ordine registrato.</p>
+          ) : (
+            <ul className="bg-card rounded-lg p-3 text-sm space-y-1">
+              {top3.map(t => (
+                <li key={t.product!.id} className="flex justify-between">
+                  <span>{t.product!.name}</span>
+                  <span className="text-muted-foreground">x{t.qty.toFixed(t.product!.unit === "kg" ? 1 : 0)}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+          <DemoLockOverlay feature="Prodotti preferiti / Top 3" compact />
+        </div>
       </Field>
 
       {/* TIMELINE UNIFICATA */}
-      <div className="space-y-3">
+      <div className="space-y-3 relative min-h-[200px]">
         <h3 className="font-display text-lg text-brand-green">Storico</h3>
         {orderHist.length === 0 && saleHist.length === 0 && (client.loyaltyHistory ?? []).length === 0 && (
           <p className="text-sm text-muted-foreground">Nessuna attività registrata.</p>
@@ -354,6 +359,7 @@ function ClientDetail({ client, onClose, onSave, onDelete }: {
             <span className="text-[10px] uppercase text-brand-gold font-bold">Fedeltà</span> · {formatDate(ev.date)} · {ev.type} {ev.note && `— ${ev.note}`}
           </div>
         ))}
+        <DemoLockOverlay feature="Storico cliente" compact />
       </div>
 
       {openWa && (
