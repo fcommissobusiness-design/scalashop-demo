@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Field } from "@/components/AppShell";
 import { putAttachment, getAttachmentUrl, deleteAttachment, downloadAttachment } from "@/lib/attachments";
 import type { PaymentAttachment } from "@/lib/data";
+import { openDemoLock } from "@/components/DemoLock";
 
 export function InvoiceField({
   hasInvoice, onHasInvoiceChange, invoice, onInvoiceChange,
@@ -51,9 +52,18 @@ export function InvoiceField({
       </Field>
       {hasInvoice && (
         <Field label="Carica fattura (PDF, JPG, PNG)">
-          <input ref={fileRef} type="file"
-            accept="application/pdf,image/jpeg,image/png,image/jpg"
-            onChange={(e) => onPick(e.target.files)} className="text-xs" />
+          <button type="button" onClick={() => openDemoLock("Carica fattura")}
+            className="w-full text-left bg-card border-2 border-dashed border-brand-gold/40 rounded-lg p-3 text-sm text-foreground/80 hover:bg-brand-gold/5 transition">
+            <span className="inline-flex items-center gap-2">
+              <span className="text-brand-gold">🔒</span>
+              <span>
+                <span className="font-semibold text-brand-green">Funzionalità non disponibile nella demo</span>
+                <span className="block text-xs text-muted-foreground">Per caricare la fattura attiva il Piano Starter di ScalaShop.</span>
+              </span>
+            </span>
+          </button>
+          {/* refs preserved to keep typings stable */}
+          <input ref={fileRef} type="file" className="hidden" onChange={(e) => onPick(e.target.files)} />
           {busy && <p className="text-xs text-muted-foreground mt-1">Caricamento...</p>}
           {err && <p className="text-xs text-danger mt-1">{err}</p>}
           {invoice && <InvoiceRow att={invoice} onDelete={remove} />}
