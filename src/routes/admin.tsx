@@ -11,6 +11,7 @@ import {
   getStorageStats,
 } from "@/lib/backup";
 import { CRM_DEFAULTS, loadCrmSettings, saveCrmSettings, resetCrmSettings, type CrmSettings } from "@/lib/crm-settings";
+import { PremiumBanner } from "@/components/DemoLock";
 
 const APP_VERSION = "0.4.0";
 
@@ -307,7 +308,11 @@ function CrmSettingsSection({ onMsg }: { onMsg: (m: string) => void }) {
   return (
     <section>
       <h2 className="font-display text-lg text-brand-green mb-3">CRM — segmentazione automatica</h2>
-      <div className="bg-card rounded-xl p-4 space-y-4">
+      <PremiumBanner
+        title="Funzionalità disponibile nel Piano Starter"
+        text="Per usare la segmentazione automatica dei clienti attiva il Piano Starter."
+      />
+      <div className="bg-card rounded-xl p-4 space-y-4 mt-3 opacity-50 pointer-events-none select-none">
         <div>
           <p className="text-xs uppercase text-muted-foreground mb-2 font-semibold">Upgrade</p>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
