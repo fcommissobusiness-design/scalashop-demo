@@ -70,3 +70,20 @@ export function DemoLockOverlay({ feature, compact }: { feature?: string; compac
     </div>
   );
 }
+
+/** Inline static banner (non-overlay). Use under section titles to mark them premium. */
+export function PremiumBanner({ title, text }: { title?: string; text?: string }) {
+  return (
+    <div className="bg-brand-cream border-2 border-brand-gold/40 rounded-xl p-4 shadow-sm text-center">
+      <div className="mx-auto w-9 h-9 rounded-full bg-brand-gold/15 text-brand-gold flex items-center justify-center text-lg mb-1">🔒</div>
+      <p className="font-display text-brand-green text-base leading-tight">
+        {title ?? "Funzionalità disponibile nel Piano Starter"}
+      </p>
+      {text && <p className="text-xs text-foreground/75 mt-1">{text}</p>}
+      <button type="button" onClick={() => openDemoLock(title)}
+        className="mt-2 inline-flex items-center justify-center px-4 py-2 rounded-lg bg-brand-gold text-white text-xs font-semibold">
+        Attiva il Piano Starter
+      </button>
+    </div>
+  );
+}
