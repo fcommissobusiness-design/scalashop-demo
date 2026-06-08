@@ -19,6 +19,7 @@ import { CartEditor } from "@/components/CartEditor";
 import { DeliveryFullSheet } from "@/components/DeliveryFullSheet";
 import { buildSaleComanda, printComanda } from "@/lib/comanda";
 import type { SupplierPayment } from "@/lib/data";
+import { CustomDateBox } from "@/components/CustomDateBox";
 
 export const Route = createFileRoute("/")({ component: Dashboard });
 
@@ -107,14 +108,8 @@ function Dashboard() {
         <TrialBanner />
         {tfId === "custom" && (
           <div className="bg-card rounded-xl p-3 flex flex-col md:flex-row gap-3 items-center">
-            <Field label="Dal">
-              <input type="date" value={customStart} onChange={(e) => setCustomStart(e.target.value)}
-                className="bg-brand-cream border border-border rounded-lg px-3 py-2 text-sm" />
-            </Field>
-            <Field label="Al">
-              <input type="date" value={customEnd} onChange={(e) => setCustomEnd(e.target.value)}
-                className="bg-brand-cream border border-border rounded-lg px-3 py-2 text-sm" />
-            </Field>
+            <CustomDateBox label="Dal" value={customStart} onChange={setCustomStart} />
+            <CustomDateBox label="Al" value={customEnd} onChange={setCustomEnd} />
           </div>
         )}
 
