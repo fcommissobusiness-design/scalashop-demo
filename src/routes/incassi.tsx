@@ -9,6 +9,7 @@ import { NewSaleSheet } from "@/routes/index";
 import { PaySheet } from "@/routes/pagamenti";
 import { DeliveryFullSheet } from "@/components/DeliveryFullSheet";
 import type { SupplierPayment } from "@/lib/data";
+import { CustomDateBox } from "@/components/CustomDateBox";
 
 export const Route = createFileRoute("/incassi")({ component: CassaPage });
 
@@ -114,10 +115,8 @@ function CassaPage() {
         </select>
         {tfId === "custom" && (
           <>
-            <input type="date" value={cs} onChange={e => setCs(e.target.value)}
-              className="bg-card border border-border rounded-lg px-2 py-1.5 text-xs" />
-            <input type="date" value={ce} onChange={e => setCe(e.target.value)}
-              className="bg-card border border-border rounded-lg px-2 py-1.5 text-xs" />
+            <CustomDateBox label="Dal" value={cs} onChange={setCs} />
+            <CustomDateBox label="Al" value={ce} onChange={setCe} />
           </>
         )}
       </div>
