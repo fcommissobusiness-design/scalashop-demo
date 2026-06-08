@@ -1,12 +1,17 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
 import { useStore } from "@/lib/store";
 import { TopBar, formatEuro, Sheet, Field, Fab, formatDate } from "@/components/AppShell";
 import { calcMargin, type Product, type ProductCategory } from "@/lib/data";
 import { marginColor } from "@/lib/metrics";
+import { PremiumBanner } from "@/components/DemoLock";
 
 export const Route = createFileRoute("/prodotti")({
   component: ProdottiPage,
+  validateSearch: (s: Record<string, unknown>) => ({
+    new: s.new === 1 || s.new === "1" ? 1 : undefined,
+    name: typeof s.name === "string" ? s.name : undefined,
+  }),
 });
 
 const CATEGORIES: ProductCategory[] = [
@@ -28,9 +33,22 @@ function isOutOfStock(p: Product): boolean {
 
 function ProdottiPage() {
   const navigate = useNavigate();
-  const { products, updateProduct, deleteProduct } = useStore();
+  const search = useSearch({ from: "/prodotti" });
+  const { products, updateProduct, deleteProduct, addProduct } = useStore();
   const [q, setQ] = useState("");
   const [editId, setEditId] = useState<string | null>(null);
+  const [openNew, setOpenNew] = useState(false);
+  const [prefillName, setPrefillName] = useState("");
+
+  useEffect(() => {
+    if (search.new === 1) {
+      setPrefillName(search.name ?? "");
+      setOpenNew(true);
+      // clear query so refresh doesn't reopen
+      navigate({ to: "/prodotti", search: {} as any, replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search.new]);
 
   const grouped = useMemo(() => {
     const list = products.filter(p => {
@@ -57,7 +75,7 @@ function ProdottiPage() {
       <div className="p-4 md:p-6 space-y-5">
         {grouped.size === 0 && (
           <div className="bg-card rounded-xl p-6 text-center text-sm text-muted-foreground border border-brand-green/25">
-            Nessun prodotto. Aggiungine uno da <button onClick={() => navigate({ to: "/magazzino" })} className="text-brand-gold font-semibold underline underline-offset-2">Magazzino</button>.
+            Nessun prodotto. <button onClick={() => setOpenNew(true)} className="text-brand-gold font-semibold underline underline-offset-2">Aggiungi nuovo prodotto</button>.
           </div>
         )}
         {[...grouped.entries()].map(([cat, items]) => (
@@ -97,7 +115,15 @@ function ProdottiPage() {
         ))}
       </div>
 
-      <Fab onClick={() => navigate({ to: "/magazzino" })} />
+      <Fab onClick={() => { setPrefillName(""); setOpenNew(true); }} />
+
+      {openNew && (
+        <NewProductSheet
+          initialName={prefillName}
+          onClose={() => setOpenNew(false)}
+          onSave={(p) => { addProduct(p as Omit<Product, "id">); setOpenNew(false); }}
+        />
+      )}
 
       {editId && (() => {
         const p = products.find(x => x.id === editId);
@@ -109,6 +135,64 @@ function ProdottiPage() {
         );
       })()}
     </div>
+  );
+}
+
+function NewProductSheet({ initialName, onClose, onSave }: {
+  initialName: string;
+  onClose: () => void;
+  onSave: (p: Omit<Product, "id">) => void;
+}) {
+  const [name, setName] = useState(initialName);
+  const [cost, setCost] = useState("");
+  const [price, setPrice] = useState("");
+  const c = cost === "" ? null : parseFloat(cost);
+  const pr = parseFloat(price) || 0;
+  const margin = c !== null && pr > 0 ? ((pr - c) / pr) * 100 : null;
+
+  const save = () => {
+    if (!name.trim() || pr <= 0) return;
+    onSave({
+      name: name.trim(),
+      category: "Dispensa",
+      cost: c,
+      price: pr,
+      unit: "pz",
+      active: true,
+    } as Omit<Product, "id">);
+  };
+
+  return (
+    <Sheet open={true} onClose={onClose} title="Nuovo prodotto"
+      footer={
+        <div className="flex gap-3 items-center">
+          <div className="flex-1 text-sm">
+            <span className="text-muted-foreground">Margine: </span>
+            <span className={`font-bold ${marginColor(margin)}`}>{margin === null ? "n/d" : `${margin.toFixed(1)}%`}</span>
+          </div>
+          <button onClick={save} disabled={!name.trim() || pr <= 0}
+            className="bg-brand-gold text-white rounded-xl px-6 py-3 font-semibold disabled:opacity-40">
+            Crea prodotto
+          </button>
+        </div>
+      }
+    >
+      <Field label="Nome prodotto">
+        <input value={name} onChange={(e) => setName(e.target.value)} autoFocus
+          className="w-full bg-card border border-border rounded-lg p-3" />
+      </Field>
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="Costo (€)">
+          <input type="number" step="0.01" value={cost} onChange={(e) => setCost(e.target.value)}
+            className="w-full bg-card border border-border rounded-lg p-3" />
+        </Field>
+        <Field label="Prezzo (€)">
+          <input type="number" step="0.01" value={price} onChange={(e) => setPrice(e.target.value)}
+            className="w-full bg-card border border-border rounded-lg p-3" />
+        </Field>
+      </div>
+      <p className="text-xs text-muted-foreground">Per categoria, unità, certificazioni e magazzino, modifica il prodotto dopo la creazione.</p>
+    </Sheet>
   );
 }
 
@@ -244,6 +328,22 @@ function ProductSheet({ product, onClose, onSave, onDelete }: {
           </ul>
         </Field>
       )}
+
+      {/* Area premium: lotti, scadenze, fornitori, movimenti */}
+      <div className="pt-2">
+        <PremiumBanner
+          title="Funzionalità disponibile nel Piano Starter"
+          text="Per gestire Magazzino, Lotti, Scadenze e Fornitori attiva il Piano Starter."
+        />
+        <div className="mt-3 grid grid-cols-2 gap-3 opacity-50 pointer-events-none select-none">
+          <Field label="Lotto"><input disabled placeholder="LOT-2026-001" className="w-full bg-card border border-border rounded-lg p-3" /></Field>
+          <Field label="Data scadenza"><input disabled type="date" className="w-full bg-card border border-border rounded-lg p-3" /></Field>
+          <Field label="Fornitore"><input disabled placeholder="—" className="w-full bg-card border border-border rounded-lg p-3" /></Field>
+          <Field label="Quantità disponibile"><input disabled placeholder="0" className="w-full bg-card border border-border rounded-lg p-3" /></Field>
+          <Field label="Carichi"><input disabled placeholder="—" className="w-full bg-card border border-border rounded-lg p-3" /></Field>
+          <Field label="Scarichi"><input disabled placeholder="—" className="w-full bg-card border border-border rounded-lg p-3" /></Field>
+        </div>
+      </div>
     </Sheet>
   );
 }

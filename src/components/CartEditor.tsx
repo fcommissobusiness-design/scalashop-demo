@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { useStore } from "@/lib/store";
 import type { OrderItem, Product, Bundle } from "@/lib/data";
 import { QtyInput } from "@/components/QtyInput";
@@ -6,7 +7,7 @@ import { formatEuro } from "@/components/AppShell";
 import {
   itemKind, itemDisplayName, itemUnitPrice, itemUnitCost, itemLineTotal,
 } from "@/lib/metrics";
-import { openDemoLock, DemoLockOverlay } from "@/components/DemoLock";
+import { DemoLockOverlay } from "@/components/DemoLock";
 
 type Tab = "prodotto" | "bundle" | "custom";
 
@@ -17,6 +18,7 @@ interface Props {
 
 export function CartEditor({ items, onChange }: Props) {
   const { products, bundles } = useStore();
+  const navigate = useNavigate();
   const [tab, setTab] = useState<Tab>("prodotto");
   const [search, setSearch] = useState("");
 
@@ -152,7 +154,8 @@ export function CartEditor({ items, onChange }: Props) {
             {productsFiltered.length === 0 && (
               <div className="space-y-2 py-2">
                 <p className="text-xs text-muted-foreground text-center">Nessun prodotto trovato.</p>
-                <button type="button" onClick={() => openDemoLock("Nuovo prodotto")}
+                <button type="button"
+                  onClick={() => navigate({ to: "/prodotti", search: { new: 1, name: search } as any })}
                   className="w-full bg-brand-gold/10 border-2 border-dashed border-brand-gold/40 text-brand-green rounded-lg py-2 text-sm font-semibold hover:bg-brand-gold/15 transition">
                   + Aggiungi nuovo prodotto
                 </button>

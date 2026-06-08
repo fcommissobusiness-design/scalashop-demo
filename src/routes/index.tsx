@@ -20,6 +20,7 @@ import { DeliveryFullSheet } from "@/components/DeliveryFullSheet";
 import { buildSaleComanda, printComanda } from "@/lib/comanda";
 import type { SupplierPayment } from "@/lib/data";
 import { CustomDateBox } from "@/components/CustomDateBox";
+import { openDemoLock } from "@/components/DemoLock";
 
 export const Route = createFileRoute("/")({ component: Dashboard });
 
@@ -294,6 +295,8 @@ function Dashboard() {
               className="bg-brand-gold text-white rounded-xl py-4 font-semibold">Nuovo scontrino</button>
             <button onClick={() => { setPickAction(false); setOpenDeliv(true); }}
               className="bg-blue-600 text-white rounded-xl py-4 font-semibold">Nuova consegna</button>
+            <button onClick={() => { setPickAction(false); openDemoLock("Nuovo Pagamento"); }}
+              className="bg-danger text-white rounded-xl py-4 font-semibold">Nuovo pagamento</button>
           </div>
         </Sheet>
       )}

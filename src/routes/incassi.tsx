@@ -10,6 +10,7 @@ import { PaySheet } from "@/routes/pagamenti";
 import { DeliveryFullSheet } from "@/components/DeliveryFullSheet";
 import type { SupplierPayment } from "@/lib/data";
 import { CustomDateBox } from "@/components/CustomDateBox";
+import { PremiumBanner } from "@/components/DemoLock";
 
 export const Route = createFileRoute("/incassi")({ component: CassaPage });
 
@@ -106,29 +107,27 @@ function CassaPage() {
 
   return (
     <div>
-      <TopBar title="Cassa" subtitle={`${tf.label} · ${tf.start.toLocaleDateString("it-IT")} → ${new Date(+tf.end - 1).toLocaleDateString("it-IT")}`} />
+      <TopBar
+        title="Cassa"
+        subtitle={`${tf.label} · ${tf.start.toLocaleDateString("it-IT")} → ${new Date(+tf.end - 1).toLocaleDateString("it-IT")}`}
+        right={
+          <div className="flex flex-wrap justify-end gap-1.5 items-center">
+            <select value={tfId} onChange={e => setTfId(e.target.value as TimeFrameId)}
+              className="bg-brand-cream text-brand-green border border-brand-gold/40 rounded-lg px-2 py-1.5 text-xs font-semibold">
+              {TIME_FRAME_OPTIONS.map(o => <option key={o.id} value={o.id}>{o.label}</option>)}
+            </select>
+            {tfId === "custom" && (
+              <>
+                <CustomDateBox label="Dal" value={cs} onChange={setCs} />
+                <CustomDateBox label="Al" value={ce} onChange={setCe} />
+              </>
+            )}
+          </div>
+        }
+      />
 
-      <div className="px-4 md:px-6 pt-4 flex flex-wrap justify-end gap-2 items-center">
-        <select value={tfId} onChange={e => setTfId(e.target.value as TimeFrameId)}
-          className="bg-card border border-border rounded-lg px-2 py-1.5 text-xs">
-          {TIME_FRAME_OPTIONS.map(o => <option key={o.id} value={o.id}>{o.label}</option>)}
-        </select>
-        {tfId === "custom" && (
-          <>
-            <CustomDateBox label="Dal" value={cs} onChange={setCs} />
-            <CustomDateBox label="Al" value={ce} onChange={setCe} />
-          </>
-        )}
-      </div>
-
-      <div className="p-4 md:p-6">
-        <div className="rounded-xl p-4 bg-brand-green text-brand-cream text-center">
-          <p className="text-[11px] uppercase tracking-wide text-brand-gold">Entrate totali</p>
-          <p className="font-display text-3xl mt-1 text-brand-gold">{formatEuro(entrateTot)}</p>
-        </div>
-      </div>
-
-      <div className="px-4 md:px-6 flex flex-wrap gap-2 pb-2">
+      {/* Filtri */}
+      <div className="px-4 md:px-6 pt-4 flex flex-wrap gap-2">
         {([
           { id: "all", label: "Tutti" },
           { id: "ordine", label: "Ordini" },
@@ -136,10 +135,26 @@ function CassaPage() {
           { id: "consegna", label: "Consegne" },
         ] as const).map(t => (
           <button key={t.id} onClick={() => setFilter(t.id)}
-            className={`px-3 py-1.5 rounded-full text-xs font-semibold ${filter === t.id ? "bg-brand-green text-brand-cream" : "bg-card text-foreground/70"}`}>
+            className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition ${filter === t.id ? "bg-brand-green text-brand-cream border-brand-green" : "bg-card text-foreground/70 border-border hover:border-brand-gold/40"}`}>
             {t.label}
           </button>
         ))}
+      </div>
+
+      {/* KPI Entrate totali (sotto i filtri) */}
+      <div className="p-4 md:p-6 pb-2">
+        <div className="rounded-xl p-4 bg-brand-green text-brand-cream text-center border border-brand-green">
+          <p className="text-[11px] uppercase tracking-wide text-brand-gold">Entrate totali</p>
+          <p className="font-display text-3xl mt-1 text-brand-gold">{formatEuro(entrateTot)}</p>
+        </div>
+      </div>
+
+      {/* CTA Starter */}
+      <div className="px-4 md:px-6 pb-2">
+        <PremiumBanner
+          title="Funzionalità disponibile nel Piano Starter"
+          text="Per visualizzare Costi, Ricavi, Utili e Margini attiva il Piano Starter."
+        />
       </div>
 
       <div className="p-4 md:p-6 space-y-2">
