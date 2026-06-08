@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { useStore } from "@/lib/store";
 import { TopBar, Fab, formatEuro, formatTime, formatDate } from "@/components/AppShell";
 import { TIME_FRAME_OPTIONS, makeTimeFrame, inFrame, type TimeFrameId } from "@/lib/timeframe";
@@ -192,7 +192,7 @@ function ScontriniPage() {
   );
 }
 
-function FilterRow({ label, children }: { label: string; children: React.ReactNode }) {
+function FilterRow({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="flex items-center gap-2 overflow-x-auto pb-1">
       <span className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold shrink-0">{label}</span>
@@ -201,7 +201,7 @@ function FilterRow({ label, children }: { label: string; children: React.ReactNo
   );
 }
 
-function Chip({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+function Chip({ active, onClick, children }: { active: boolean; onClick: () => void; children: ReactNode }) {
   return (
     <button onClick={onClick}
       className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap border transition ${active ? "bg-brand-gold/15 text-brand-green border-brand-gold ring-1 ring-brand-gold/40" : "bg-card text-foreground/70 border-border hover:border-brand-gold/40"}`}>
