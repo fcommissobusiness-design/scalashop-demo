@@ -6,6 +6,7 @@ import { formatEuro } from "@/components/AppShell";
 import {
   itemKind, itemDisplayName, itemUnitPrice, itemUnitCost, itemLineTotal,
 } from "@/lib/metrics";
+import { openDemoLock, DemoLockOverlay } from "@/components/DemoLock";
 
 type Tab = "prodotto" | "bundle" | "custom";
 
@@ -149,21 +150,27 @@ export function CartEditor({ items, onChange }: Props) {
               );
             })}
             {productsFiltered.length === 0 && (
-              <p className="text-xs text-muted-foreground text-center py-3">Nessun prodotto trovato.</p>
+              <div className="space-y-2 py-2">
+                <p className="text-xs text-muted-foreground text-center">Nessun prodotto trovato.</p>
+                <button type="button" onClick={() => openDemoLock("Nuovo prodotto")}
+                  className="w-full bg-brand-gold/10 border-2 border-dashed border-brand-gold/40 text-brand-green rounded-lg py-2 text-sm font-semibold hover:bg-brand-gold/15 transition">
+                  + Aggiungi nuovo prodotto
+                </button>
+              </div>
             )}
           </div>
         </>
       )}
 
       {tab === "bundle" && (
-        <>
+        <div className="relative">
           <input
             placeholder="Cerca offerta o bundle..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full bg-card border border-border rounded-lg p-2.5 text-sm"
           />
-          <div className="max-h-72 overflow-y-auto mt-2 space-y-1">
+          <div className="max-h-72 overflow-y-auto mt-2 space-y-1 min-h-[180px]">
             {bundlesFiltered.map((b) => {
               const ex = items.find((it) => itemKind(it) === "bundle" && it.bundleId === b.id);
               const qty = ex?.qty ?? 0;
@@ -187,7 +194,8 @@ export function CartEditor({ items, onChange }: Props) {
               <p className="text-xs text-muted-foreground text-center py-3">Nessuna offerta o bundle disponibile.</p>
             )}
           </div>
-        </>
+          <DemoLockOverlay feature="Bundle" compact />
+        </div>
       )}
 
       {tab === "custom" && <CustomRowForm products={products} onAdd={addCustom} />}
