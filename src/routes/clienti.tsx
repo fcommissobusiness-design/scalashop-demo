@@ -311,55 +311,61 @@ function ClientDetail({ client, onClose, onSave, onDelete }: {
           className="w-full bg-card border border-border rounded-lg p-3 text-sm" />
       </Field>
 
-      <Field label="Prodotti preferiti (Top 3)">
-        <div className="relative min-h-[120px]">
-          {top3.length === 0 ? (
-            <p className="text-sm text-muted-foreground italic">Nessun ordine registrato.</p>
-          ) : (
-            <ul className="bg-card rounded-lg p-3 text-sm space-y-1">
-              {top3.map(t => (
-                <li key={t.product!.id} className="flex justify-between">
-                  <span>{t.product!.name}</span>
-                  <span className="text-muted-foreground">x{t.qty.toFixed(t.product!.unit === "kg" ? 1 : 0)}</span>
-                </li>
-              ))}
-            </ul>
-          )}
+      <div className="space-y-2 pt-2">
+        <div>
+          <h3 className="font-display text-lg text-brand-green">Prodotti preferiti</h3>
+          <p className="text-xs text-muted-foreground">Top 3 prodotti acquistati dal cliente.</p>
+        </div>
+        <div className="relative min-h-[140px]">
+          <ul className="bg-card rounded-lg p-3 text-sm space-y-1 opacity-40 pointer-events-none select-none">
+            <li className="flex justify-between"><span>Mozzarella di Bufala</span><span className="text-muted-foreground">x4.5</span></li>
+            <li className="flex justify-between"><span>Ricotta di Pecora</span><span className="text-muted-foreground">x3</span></li>
+            <li className="flex justify-between"><span>Burrata</span><span className="text-muted-foreground">x2</span></li>
+          </ul>
           <DemoLockOverlay feature="Prodotti preferiti / Top 3" compact />
         </div>
-      </Field>
+      </div>
 
       {/* TIMELINE UNIFICATA */}
-      <div className="space-y-3 relative min-h-[200px]">
-        <h3 className="font-display text-lg text-brand-green">Storico</h3>
-        {orderHist.length === 0 && saleHist.length === 0 && (client.loyaltyHistory ?? []).length === 0 && (
-          <p className="text-sm text-muted-foreground">Nessuna attività registrata.</p>
-        )}
-        {orderHist.map(o => (
-          <div key={o.id} className="bg-card rounded-lg p-3 text-sm border border-border">
-            <div className="flex justify-between">
-              <span><span className="text-[10px] uppercase text-brand-gold font-bold">Ordine</span> · {formatDate(o.pickupDate)}</span>
-              <span className="font-semibold">{formatEuro(o.total)}</span>
-            </div>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              {o.status} · {o.items.map(i => products.find(p => p.id === i.productId)?.name ?? i.productId).join(", ")}
-            </p>
+      <div className="space-y-2 pt-4 border-t border-border">
+        <div>
+          <h3 className="font-display text-lg text-brand-green">Storico</h3>
+          <p className="text-xs text-muted-foreground">Timeline completa di ordini, scontrini e fedeltà.</p>
+        </div>
+        <div className="relative min-h-[220px] space-y-2">
+          <div className="opacity-40 pointer-events-none select-none space-y-2">
+            {orderHist.slice(0, 3).map(o => (
+              <div key={o.id} className="bg-card rounded-lg p-3 text-sm border border-border">
+                <div className="flex justify-between">
+                  <span><span className="text-[10px] uppercase text-brand-gold font-bold">Ordine</span> · {formatDate(o.pickupDate)}</span>
+                  <span className="font-semibold">{formatEuro(o.total)}</span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {o.status} · {o.items.map(i => products.find(p => p.id === i.productId)?.name ?? i.productId).join(", ")}
+                </p>
+              </div>
+            ))}
+            {saleHist.slice(0, 2).map(s => (
+              <div key={s.id} className="bg-card rounded-lg p-3 text-sm border border-border">
+                <div className="flex justify-between">
+                  <span><span className="text-[10px] uppercase text-brand-green font-bold">Scontrino</span> · {formatDate(s.date)}</span>
+                  <span className="font-semibold">{formatEuro(s.total)}</span>
+                </div>
+              </div>
+            ))}
+            {orderHist.length === 0 && saleHist.length === 0 && (
+              <>
+                <div className="bg-card rounded-lg p-3 text-sm border border-border">
+                  <div className="flex justify-between"><span><span className="text-[10px] uppercase text-brand-gold font-bold">Ordine</span> · 02 mag</span><span className="font-semibold">€ 28,40</span></div>
+                </div>
+                <div className="bg-card rounded-lg p-3 text-sm border border-border">
+                  <div className="flex justify-between"><span><span className="text-[10px] uppercase text-brand-green font-bold">Scontrino</span> · 28 apr</span><span className="font-semibold">€ 14,10</span></div>
+                </div>
+              </>
+            )}
           </div>
-        ))}
-        {saleHist.map(s => (
-          <div key={s.id} className="bg-card rounded-lg p-3 text-sm border border-border">
-            <div className="flex justify-between">
-              <span><span className="text-[10px] uppercase text-brand-green font-bold">Scontrino</span> · {formatDate(s.date)}</span>
-              <span className="font-semibold">{formatEuro(s.total)}</span>
-            </div>
-          </div>
-        ))}
-        {(client.loyaltyHistory ?? []).slice().reverse().slice(0, 10).map((ev, idx) => (
-          <div key={idx} className="bg-card rounded-lg p-2 text-xs border border-border">
-            <span className="text-[10px] uppercase text-brand-gold font-bold">Fedeltà</span> · {formatDate(ev.date)} · {ev.type} {ev.note && `— ${ev.note}`}
-          </div>
-        ))}
-        <DemoLockOverlay feature="Storico cliente" compact />
+          <DemoLockOverlay feature="Storico cliente" compact />
+        </div>
       </div>
 
       {openWa && (
