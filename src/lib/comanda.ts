@@ -95,20 +95,15 @@ export function buildDeliveryComanda(d: Delivery, c: Client | undefined, linkedO
 void itemKind;
 
 export function printComanda(data: ComandaData) {
-  const html = renderHtml(data);
-  const w = window.open("", "_blank", "width=420,height=720");
-  if (!w) {
-    alert("Abilita i popup per stampare la comanda.");
-    return;
+  // Demo: feature visible but not usable. Show locked modal.
+  void data;
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("scalashop-demo-lock", { detail: { feature: "Stampa Comanda" } }));
   }
-  w.document.open();
-  w.document.write(html);
-  w.document.close();
-  // Attendere il render, poi stampare
-  setTimeout(() => {
-    try { w.focus(); w.print(); } catch { /* ignore */ }
-  }, 250);
 }
+
+// Keep renderHtml referenced to avoid dead-code warning
+void renderHtml;
 
 function renderHtml(d: ComandaData): string {
   const itemsRows = d.items.map((i) =>

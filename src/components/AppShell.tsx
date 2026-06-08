@@ -7,6 +7,7 @@ import logoAsset from "@/assets/scalashop-logo.png.asset.json";
 import { isLockedPath, getBusinessName } from "@/lib/demo-flags";
 import { LockedSection } from "@/components/LockedSection";
 import { PromoMarquee } from "@/components/PromoMarquee";
+import { DemoLockModal } from "@/components/DemoLock";
 
 type NavItem = { to: string; label: string; short: string; locked?: boolean };
 type NavGroup = { label: string; items: NavItem[] };
@@ -16,6 +17,7 @@ const NAV_GROUPS: NavGroup[] = [
     { to: "/", label: "Dashboard", short: "Dashboard" },
     { to: "/ordini", label: "Ordini", short: "Ordini" },
     { to: "/consegne", label: "Consegne", short: "Consegne" },
+    { to: "/scontrini", label: "Scontrini", short: "Scontrini" },
     { to: "/clienti", label: "Clienti", short: "Clienti" },
     { to: "/offerte", label: "Offerte", short: "Offerte", locked: true },
     { to: "/b2b", label: "B2B", short: "B2B", locked: true },
@@ -239,6 +241,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       )}
 
       <SyncBadge />
+      <DemoLockModal />
     </div>
   );
 }

@@ -9,6 +9,7 @@ import { WhatsAppDialog } from "@/components/WhatsAppDialog";
 import { makeTimeFrame, inFrame, TIME_FRAME_OPTIONS, type TimeFrameId } from "@/lib/timeframe";
 import { CartEditor } from "@/components/CartEditor";
 import { buildOrderComanda, printComanda } from "@/lib/comanda";
+import { CustomDateBox } from "@/components/CustomDateBox";
 
 interface Search { f?: string }
 
@@ -92,11 +93,16 @@ function OrdiniPage() {
 
   const filtered = useMemo(() => inPeriod.filter((o) => {
     const c = clients.find((c) => c.id === o.clientId);
-    if (q && !(c?.name.toLowerCase().includes(q.toLowerCase()) || c?.phone.includes(q))) return false;
+    if (q) {
+      const t = q.toLowerCase();
+      const matchClient = (c?.name.toLowerCase().includes(t) || c?.phone.includes(q)) ?? false;
+      const matchProduct = o.items.some((it) => itemDisplayName(it, products, bundles).toLowerCase().includes(t));
+      if (!matchClient && !matchProduct) return false;
+    }
     if (statusSel.size > 0 && !statusSel.has(o.status)) return false;
     if (deliverySel.size > 0 && !deliverySel.has(o.delivery ?? "ritiro")) return false;
     return true;
-  }).sort((a, b) => +new Date(b.pickupDate) - +new Date(a.pickupDate)), [inPeriod, q, clients, statusSel, deliverySel]);
+  }).sort((a, b) => +new Date(b.pickupDate) - +new Date(a.pickupDate)), [inPeriod, q, clients, statusSel, deliverySel, products, bundles]);
 
   const clientById = (id: string) => clients.find((c) => c.id === id);
   const productById = (id: string) => products.find((p) => p.id === id);
@@ -105,10 +111,10 @@ function OrdiniPage() {
     <div>
       <TopBar title="Ordini" subtitle={`${filtered.length} totali · ${tf.label}`} />
 
-      <div className="px-4 md:px-6 pt-3 sticky top-0 md:static bg-brand-cream z-30 space-y-2">
+      <div className="px-4 md:px-6 pt-4 md:pt-5 sticky top-0 md:static bg-brand-cream z-30 space-y-3">
         {/* Top row: search + timeframe */}
         <div className="flex flex-col md:flex-row gap-2">
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cerca cliente o telefono..."
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cerca cliente, telefono o prodotto..."
             className="flex-1 bg-card border border-border rounded-lg p-2.5 text-sm" />
           <div className="flex gap-1.5 items-center md:justify-end">
             <select value={tfId} onChange={(e) => setTfId(e.target.value as TimeFrameId)}
@@ -117,17 +123,15 @@ function OrdiniPage() {
             </select>
             {tfId === "custom" && (
               <>
-                <input type="date" value={customStart} onChange={(e) => setCustomStart(e.target.value)}
-                  className="bg-card border border-border rounded-lg p-2 text-xs" />
-                <input type="date" value={customEnd} onChange={(e) => setCustomEnd(e.target.value)}
-                  className="bg-card border border-border rounded-lg p-2 text-xs" />
+                <CustomDateBox label="Dal" value={customStart} onChange={setCustomStart} />
+                <CustomDateBox label="Al" value={customEnd} onChange={setCustomEnd} />
               </>
             )}
           </div>
         </div>
 
         {/* Status filters */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1">
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-1">
           <span className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold shrink-0">Status</span>
           {STATUS_ORDER.map((s) => {
             const active = statusSel.has(s);
