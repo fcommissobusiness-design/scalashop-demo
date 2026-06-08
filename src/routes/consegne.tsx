@@ -7,6 +7,8 @@ import { WhatsAppDialog } from "@/components/WhatsAppDialog";
 import { MapsBtn } from "@/components/QuickActions";
 import { makeTimeFrame, inFrame, TIME_FRAME_OPTIONS, type TimeFrameId } from "@/lib/timeframe";
 import { DeliveryFullSheet } from "@/components/DeliveryFullSheet";
+import { CustomDateBox } from "@/components/CustomDateBox";
+import { itemDisplayName } from "@/lib/metrics";
 
 export const Route = createFileRoute("/consegne")({ component: ConsegnePage });
 
@@ -30,7 +32,7 @@ function toDateInput(d: Date) {
 }
 
 function ConsegnePage() {
-  const { deliveries, clients, orders, updateDelivery, deleteDelivery } = useStore();
+  const { deliveries, clients, orders, products, bundles, updateDelivery, deleteDelivery } = useStore();
   const [openNew, setOpenNew] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [waId, setWaId] = useState<string | null>(null);
@@ -58,10 +60,14 @@ function ConsegnePage() {
       .filter(d => {
         if (!t) return true;
         const c = clientById(d.clientId);
-        return (c?.name.toLowerCase().includes(t) ?? false) || (c?.phone.includes(q) ?? false);
+        const matchClient = (c?.name.toLowerCase().includes(t) ?? false) || (c?.phone.includes(q) ?? false);
+        const addr = d.address?.toLowerCase().includes(t) ?? false;
+        const o = d.orderId ? orders.find(x => x.id === d.orderId) : null;
+        const matchProduct = o ? o.items.some(i => itemDisplayName(i, products, bundles).toLowerCase().includes(t)) : false;
+        return matchClient || addr || matchProduct;
       })
       .sort((a, b) => +new Date(b.date) - +new Date(a.date));
-  }, [inPeriod, q, statusFilter, clients]);
+  }, [inPeriod, q, statusFilter, clients, orders, products, bundles]);
 
   const aperte = inPeriod.filter(d => d.status === "da_preparare" || d.status === "in_consegna");
   const completate = inPeriod.filter(d => d.status === "consegnata");
@@ -93,16 +99,14 @@ function ConsegnePage() {
         </select>
         {tfId === "custom" && (
           <>
-            <input type="date" value={customStart} onChange={(e) => setCustomStart(e.target.value)}
-              className="bg-card border border-border rounded-lg p-2 text-xs" />
-            <input type="date" value={customEnd} onChange={(e) => setCustomEnd(e.target.value)}
-              className="bg-card border border-border rounded-lg p-2 text-xs" />
+            <CustomDateBox label="Dal" value={customStart} onChange={setCustomStart} />
+            <CustomDateBox label="Al" value={customEnd} onChange={setCustomEnd} />
           </>
         )}
       </div>
 
       <div className="px-4 md:px-6 pt-3">
-        <input placeholder="Cerca cliente o telefono..." value={q} onChange={(e) => setQ(e.target.value)}
+        <input placeholder="Cerca cliente, telefono, indirizzo o prodotto..." value={q} onChange={(e) => setQ(e.target.value)}
           className="w-full bg-card border border-border rounded-lg p-2.5 text-sm" />
       </div>
 
