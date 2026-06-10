@@ -335,7 +335,7 @@ function SupportButton() {
       target="_blank"
       rel="noopener noreferrer"
       style={{ bottom: "calc(5.5rem + env(safe-area-inset-bottom))" }}
-      className="fixed md:!bottom-3 left-3 z-40 inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-brand-green text-brand-cream text-[11px] font-semibold shadow-lg border border-brand-gold/40 hover:brightness-110 transition"
+      className="fixed md:!bottom-3 right-3 md:left-3 md:right-auto z-40 inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-brand-green text-brand-cream text-[11px] font-semibold shadow-lg border border-brand-gold/40 hover:brightness-110 transition"
       aria-label="Richiedi Assistenza"
     >
       <span aria-hidden>💬</span> Richiedi Assistenza
