@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCloudSync, useSyncStatus } from "@/lib/cloudSync";
 import { OnboardingScreen, hasCompletedOnboarding } from "./OnboardingScreen";
 import logoAsset from "@/assets/scalashop-logo.png.asset.json";
-import { isLockedPath, getBusinessName, isTrialExpired, ensureTrialStarted } from "@/lib/demo-flags";
+import { isLockedPath, getBusinessName, isTrialExpired, ensureTrialStarted, getTrialDaysLeft } from "@/lib/demo-flags";
 import { PromoMarquee } from "@/components/PromoMarquee";
 import { DemoLockModal } from "@/components/DemoLock";
 import { WA_URL } from "@/lib/wa";
@@ -236,6 +236,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       {/* Contenuto */}
       <main className="flex-1 pb-24 md:pb-8 md:max-w-6xl md:mx-auto w-full relative">
         <PromoMarquee />
+        <GlobalTrialBanner userId={effectiveUserId} />
         {businessName && (
           <div className="hidden md:flex justify-end px-6 pt-3 -mb-1">
             <span className="text-xs font-semibold text-brand-green/70 bg-brand-gold/15 border border-brand-gold/30 rounded-full px-3 py-1">
@@ -334,7 +335,7 @@ function SupportButton() {
       target="_blank"
       rel="noopener noreferrer"
       style={{ bottom: "calc(5.5rem + env(safe-area-inset-bottom))" }}
-      className="fixed md:!bottom-3 left-3 z-40 inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-brand-green text-brand-cream text-[11px] font-semibold shadow-lg border border-brand-gold/40 hover:brightness-110 transition"
+      className="fixed md:!bottom-3 right-3 md:left-3 md:right-auto z-40 inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-brand-green text-brand-cream text-[11px] font-semibold shadow-lg border border-brand-gold/40 hover:brightness-110 transition"
       aria-label="Richiedi Assistenza"
     >
       <span aria-hidden>💬</span> Richiedi Assistenza
@@ -379,10 +380,33 @@ function SyncBadge() {
   const m = map[s] ?? map.idle;
   return (
     <div
-      style={{ bottom: "calc(5.5rem + env(safe-area-inset-bottom))" }}
-      className="fixed md:!bottom-3 left-3 md:left-auto md:right-3 z-40 pointer-events-none">
+      style={{ bottom: "calc(8.5rem + env(safe-area-inset-bottom))" }}
+      className="fixed md:!bottom-3 right-3 md:left-auto z-40 pointer-events-none">
       <div className={`text-[10px] font-semibold px-2 py-1 rounded-full shadow-sm border border-border/50 ${m.color}`}>
         ● {m.label}
+      </div>
+    </div>
+  );
+}
+
+/** Banner trial globale: appare subito sotto la barra dinamica su ogni scheda. */
+function GlobalTrialBanner({ userId }: { userId: string }) {
+  const remaining = getTrialDaysLeft(userId);
+  if (remaining <= 0) return null;
+  return (
+    <div className="px-4 md:px-6 pt-3">
+      <div className="rounded-xl px-4 py-3 flex items-center justify-between gap-3 shadow-sm"
+           style={{ background: "linear-gradient(135deg, var(--brand-green), var(--brand-green-dark))" }}>
+        <div className="text-brand-cream min-w-0">
+          <p className="text-[10px] uppercase tracking-wider text-brand-gold font-bold leading-none">Demo gratuita ScalaShop</p>
+          <p className="text-xs md:text-sm mt-1 leading-snug truncate">
+            Ti restano <span className="text-brand-gold font-bold">{remaining} giorn{remaining === 1 ? "o" : "i"}</span> per testare il nuovo sistema operativo della tua attività.
+          </p>
+        </div>
+        <a href={WA_URL} target="_blank" rel="noopener noreferrer"
+           className="shrink-0 inline-flex items-center justify-center px-3 py-2 rounded-lg bg-brand-gold text-white text-xs font-bold shadow hover:brightness-105 transition">
+          Attivalo Ora
+        </a>
       </div>
     </div>
   );
