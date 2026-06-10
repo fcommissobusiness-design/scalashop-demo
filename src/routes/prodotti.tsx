@@ -332,8 +332,8 @@ function ProductSheet({ product, onClose, onSave, onDelete }: {
       {/* Area premium: lotti, scadenze, fornitori, movimenti */}
       <div className="pt-2">
         <PremiumBanner
-          title="Funzionalità disponibile nel Piano Starter"
-          text="Per gestire Magazzino, Lotti, Scadenze e Fornitori attiva il Piano Starter."
+          title="Funzionalità disponibile nel piano a pagamento"
+          text="Per gestire Magazzino, Lotti, Scadenze e Fornitori attiva il piano a pagamento."
         />
         <div className="mt-3 grid grid-cols-2 gap-3 opacity-50 pointer-events-none select-none">
           <Field label="Lotto"><input disabled placeholder="LOT-2026-001" className="w-full bg-card border border-border rounded-lg p-3" /></Field>

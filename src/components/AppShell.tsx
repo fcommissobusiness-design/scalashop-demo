@@ -171,7 +171,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                     <Link key={`${g.label}-${n.to}`} to={n.to}
                       className={`px-3 py-2 rounded-lg text-sm font-medium flex items-center justify-between gap-2 ${active ? "bg-brand-gold/20 text-brand-gold" : "text-brand-cream/80 hover:bg-brand-cream/5"} ${n.locked ? "opacity-70" : ""}`}>
                       <span>{n.label}</span>
-                      {n.locked && <span title="Disponibile con il piano Starter" className="text-[10px] leading-none">🔒</span>}
+                      {n.locked && <span title="Disponibile con il piano a pagamento" className="text-[10px] leading-none">🔒</span>}
                     </Link>
                   );
                 })}
@@ -228,7 +228,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                         <Link key={`${g.label}-${n.to}`} to={n.to} onClick={() => setMoreOpen(false)}
                           className={`px-3 py-2.5 rounded-lg text-sm font-medium flex items-center justify-between gap-2 ${active ? "bg-brand-green text-brand-cream" : "bg-card text-foreground/80"} ${n.locked ? "opacity-70" : ""}`}>
                           <span>{n.label}</span>
-                          {n.locked && <span title="Disponibile con il piano Starter" className="text-[10px] leading-none">🔒</span>}
+                          {n.locked && <span title="Disponibile con il piano a pagamento" className="text-[10px] leading-none">🔒</span>}
                         </Link>
                       );
                     })}

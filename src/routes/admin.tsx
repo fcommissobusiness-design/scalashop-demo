@@ -309,8 +309,8 @@ function CrmSettingsSection({ onMsg }: { onMsg: (m: string) => void }) {
     <section>
       <h2 className="font-display text-lg text-brand-green mb-3">CRM — segmentazione automatica</h2>
       <PremiumBanner
-        title="Funzionalità disponibile nel Piano Starter"
-        text="Per usare la segmentazione automatica dei clienti attiva il Piano Starter."
+        title="Funzionalità disponibile nel piano a pagamento"
+        text="Per usare la segmentazione automatica dei clienti attiva il piano a pagamento."
       />
       <div className="bg-card rounded-xl p-4 space-y-4 mt-3 opacity-50 pointer-events-none select-none">
         <div>

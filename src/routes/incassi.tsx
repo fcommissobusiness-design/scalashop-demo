@@ -152,8 +152,8 @@ function CassaPage() {
       {/* CTA Starter */}
       <div className="px-4 md:px-6 pb-2">
         <PremiumBanner
-          title="Funzionalità disponibile nel Piano Starter"
-          text="Per visualizzare Costi, Ricavi, Utili e Margini attiva il Piano Starter."
+          title="Funzionalità disponibile nel piano a pagamento"
+          text="Per visualizzare Costi, Ricavi, Utili e Margini attiva il piano a pagamento."
         />
       </div>
 
