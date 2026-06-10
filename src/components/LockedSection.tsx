@@ -1,9 +1,10 @@
 import { TopBar } from "@/components/AppShell";
+import { WA_URL } from "@/lib/wa";
 
 export function LockedSection({ title }: { title?: string }) {
   return (
     <div>
-      <TopBar title={title ?? "Funzionalità Pro"} subtitle="Disponibile con il piano Starter" />
+      <TopBar title={title ?? "Funzionalità Pro"} subtitle="Disponibile nel piano a pagamento" />
       <div className="relative min-h-[60vh] p-4 md:p-8">
         {/* Fake blurred preview */}
         <div aria-hidden className="absolute inset-4 md:inset-8 rounded-2xl bg-card border border-border opacity-40 blur-[2px] overflow-hidden">
@@ -22,20 +23,17 @@ export function LockedSection({ title }: { title?: string }) {
         <div className="relative z-10 mx-auto max-w-md mt-12 md:mt-20 bg-brand-cream border-2 border-brand-gold/50 rounded-2xl shadow-2xl p-6 text-center">
           <div className="mx-auto w-12 h-12 rounded-full bg-brand-gold/15 text-brand-gold flex items-center justify-center text-2xl mb-3">🔒</div>
           <h2 className="font-display text-xl md:text-2xl text-brand-green mb-2">
-            Funzionalità non disponibile in demo
+            Funzionalità disponibile nel piano a pagamento
           </h2>
           <p className="text-sm text-foreground/80">
-            Per sbloccare anche questa funzionalità, attiva il piano Starter di ScalaShop.
+            Per sbloccare anche questa funzionalità, attiva il piano a pagamento di ScalaShop.
           </p>
-          <button
-            type="button"
-            onClick={(e) => e.preventDefault()}
-            className="mt-5 inline-flex items-center justify-center w-full px-5 py-3 rounded-xl bg-brand-gold text-white text-sm font-semibold shadow hover:brightness-105 transition"
-          >
-            Attiva il piano Starter
-          </button>
+          <a href={WA_URL} target="_blank" rel="noopener noreferrer"
+            className="mt-5 inline-flex items-center justify-center w-full px-5 py-3 rounded-xl bg-brand-gold text-white text-sm font-semibold shadow hover:brightness-105 transition">
+            Attivalo Ora
+          </a>
           <p className="text-[11px] text-muted-foreground mt-2">
-            Con il piano Starter avrai accesso a tutte le sezioni del gestionale.
+            Con il piano a pagamento avrai accesso a tutte le sezioni del gestionale.
           </p>
         </div>
       </div>
