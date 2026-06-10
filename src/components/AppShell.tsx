@@ -4,10 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCloudSync, useSyncStatus } from "@/lib/cloudSync";
 import { OnboardingScreen, hasCompletedOnboarding } from "./OnboardingScreen";
 import logoAsset from "@/assets/scalashop-logo.png.asset.json";
-import { isLockedPath, getBusinessName } from "@/lib/demo-flags";
-import { LockedSection } from "@/components/LockedSection";
+import { isLockedPath, getBusinessName, isTrialExpired, ensureTrialStarted } from "@/lib/demo-flags";
 import { PromoMarquee } from "@/components/PromoMarquee";
 import { DemoLockModal } from "@/components/DemoLock";
+import { WA_URL } from "@/lib/wa";
 
 type NavItem = { to: string; label: string; short: string; locked?: boolean };
 type NavGroup = { label: string; items: NavItem[] };
@@ -54,7 +54,9 @@ const MOBILE_PRIMARY: NavItem[] = [
 ];
 
 function AuthScreen() {
-  const mode = "login" as const;
+  const [mode, setMode] = useState<"register" | "login">("register");
+  const [businessName, setBusinessName] = useState("");
+  const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
@@ -65,18 +67,59 @@ function AuthScreen() {
     e.preventDefault();
     setErr(null); setInfo(null); setBusy(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw error;
+      if (mode === "register") {
+        const { data, error } = await supabase.auth.signUp({
+          email, password,
+          options: {
+            emailRedirectTo: window.location.origin,
+            data: { business_name: businessName, phone },
+          },
+        });
+        if (error) throw error;
+        if (!data.session) {
+          const { error: signInErr } = await supabase.auth.signInWithPassword({ email, password });
+          if (signInErr) throw signInErr;
+        }
+        try {
+          const u = (await supabase.auth.getSession()).data.session?.user;
+          if (u) localStorage.setItem(`scalashop-reg:${u.id}`, JSON.stringify({ businessName, phone }));
+        } catch {}
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+      }
     } catch (e: any) {
       setErr(e?.message ?? "Errore di autenticazione");
     } finally { setBusy(false); }
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-brand-cream text-brand-green px-6">
-      <img src={logoAsset.url} alt="ScalaShop" className="h-24 object-contain mb-2" />
-      <p className="text-sm text-muted-foreground mb-8 text-center">Gestionale semplice per food retail artigianale</p>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-brand-cream text-brand-green px-6 py-10">
+      <img src={logoAsset.url} alt="ScalaShop" className="h-20 md:h-24 object-contain mb-2" />
+      <p className="text-sm text-muted-foreground mb-4 text-center max-w-xs">Gestionale semplice per food retail artigianale. Demo gratuita 14 giorni.</p>
+      <div className="flex bg-brand-green-dark/10 rounded-full p-1 mb-4 text-xs font-semibold">
+        <button type="button" onClick={() => setMode("register")}
+          className={`px-4 py-1.5 rounded-full transition ${mode === "register" ? "bg-brand-green text-brand-cream" : "text-brand-green/70"}`}>Registrati</button>
+        <button type="button" onClick={() => setMode("login")}
+          className={`px-4 py-1.5 rounded-full transition ${mode === "login" ? "bg-brand-green text-brand-cream" : "text-brand-green/70"}`}>Accedi</button>
+      </div>
       <form onSubmit={submit} className="w-full max-w-xs space-y-3 bg-brand-green-dark/40 p-5 rounded-2xl">
+        {mode === "register" && (
+          <>
+            <div>
+              <label className="text-[11px] uppercase tracking-wider opacity-80">Nome attività</label>
+              <input type="text" required value={businessName}
+                onChange={(e) => setBusinessName(e.target.value)}
+                className="w-full mt-1 px-3 py-2 rounded-lg bg-brand-cream text-brand-green outline-none" />
+            </div>
+            <div>
+              <label className="text-[11px] uppercase tracking-wider opacity-80">Recapito telefonico</label>
+              <input type="tel" required value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                className="w-full mt-1 px-3 py-2 rounded-lg bg-brand-cream text-brand-green outline-none" />
+            </div>
+          </>
+        )}
         <div>
           <label className="text-[11px] uppercase tracking-wider opacity-80">Email</label>
           <input type="email" autoComplete="email" required value={email}
@@ -85,7 +128,7 @@ function AuthScreen() {
         </div>
         <div>
           <label className="text-[11px] uppercase tracking-wider opacity-80">Password</label>
-          <input type="password" autoComplete="current-password" required minLength={6} value={password}
+          <input type="password" autoComplete={mode === "register" ? "new-password" : "current-password"} required minLength={6} value={password}
             onChange={(e) => setPassword(e.target.value)}
             className="w-full mt-1 px-3 py-2 rounded-lg bg-brand-cream text-brand-green outline-none" />
         </div>
@@ -93,11 +136,11 @@ function AuthScreen() {
         {info && <p className="text-xs text-emerald-300">{info}</p>}
         <button disabled={busy} type="submit"
           className="w-full py-2.5 rounded-lg bg-brand-gold text-brand-green font-semibold disabled:opacity-60">
-          {busy ? "…" : "Accedi"}
+          {busy ? "…" : mode === "register" ? "Registrati" : "Accedi"}
         </button>
       </form>
       <p className="mt-6 text-[11px] opacity-60 max-w-xs text-center">
-        Demo gratuita 14 giorni. Lo stesso account sincronizza ordini, clienti, cassa e magazzino su iPhone, PC e tablet.
+        Lo stesso account sincronizza ordini, clienti, cassa e magazzino su iPhone, PC e tablet.
       </p>
     </div>
   );
