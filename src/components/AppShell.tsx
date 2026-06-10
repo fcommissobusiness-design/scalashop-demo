@@ -380,8 +380,8 @@ function SyncBadge() {
   const m = map[s] ?? map.idle;
   return (
     <div
-      style={{ bottom: "calc(5.5rem + env(safe-area-inset-bottom))" }}
-      className="fixed md:!bottom-3 left-3 md:left-auto md:right-3 z-40 pointer-events-none">
+      style={{ bottom: "calc(8.5rem + env(safe-area-inset-bottom))" }}
+      className="fixed md:!bottom-3 right-3 md:left-auto z-40 pointer-events-none">
       <div className={`text-[10px] font-semibold px-2 py-1 rounded-full shadow-sm border border-border/50 ${m.color}`}>
         ● {m.label}
       </div>
