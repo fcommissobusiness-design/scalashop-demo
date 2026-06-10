@@ -15,6 +15,7 @@ export function isLockedPath(path: string): boolean {
 
 const ONB_KEY = "scalashop-onboarding";
 const TRIAL_DAYS = 14;
+const TRIAL_START_KEY = "scalashop-trial-start";
 
 export type OnbData = {
   businessName?: string;
@@ -35,11 +36,44 @@ export function getBusinessName(userId: string): string {
   return readOnboarding(userId)?.businessName?.trim() || "";
 }
 
-export function getTrialDaysLeft(userId: string): number {
+/** Trial inizia alla PRIMA entrata effettiva nella demo (dopo registrazione + onboarding). */
+export function getTrialStart(userId: string): number {
+  if (typeof window === "undefined") return Date.now();
+  const raw = localStorage.getItem(`${TRIAL_START_KEY}:${userId}`);
+  if (raw) {
+    const n = Number(raw);
+    if (!isNaN(n) && n > 0) return n;
+  }
+  // Fallback: usa completedAt dell'onboarding se presente.
   const onb = readOnboarding(userId);
-  if (!onb?.completedAt) return TRIAL_DAYS;
-  const start = new Date(onb.completedAt).getTime();
-  if (isNaN(start)) return TRIAL_DAYS;
+  if (onb?.completedAt) {
+    const t = new Date(onb.completedAt).getTime();
+    if (!isNaN(t)) {
+      localStorage.setItem(`${TRIAL_START_KEY}:${userId}`, String(t));
+      return t;
+    }
+  }
+  return 0;
+}
+
+export function ensureTrialStarted(userId: string): number {
+  if (typeof window === "undefined") return Date.now();
+  const existing = getTrialStart(userId);
+  if (existing > 0) return existing;
+  const now = Date.now();
+  localStorage.setItem(`${TRIAL_START_KEY}:${userId}`, String(now));
+  return now;
+}
+
+export function getTrialDaysLeft(userId: string): number {
+  const start = getTrialStart(userId);
+  if (!start) return TRIAL_DAYS;
   const elapsedDays = Math.floor((Date.now() - start) / 86400000);
   return Math.max(0, TRIAL_DAYS - elapsedDays);
+}
+
+export function isTrialExpired(userId: string): boolean {
+  const start = getTrialStart(userId);
+  if (!start) return false;
+  return Date.now() - start > TRIAL_DAYS * 86400000;
 }
