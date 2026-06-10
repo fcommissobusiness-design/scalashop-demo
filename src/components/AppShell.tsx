@@ -388,18 +388,6 @@ function SyncBadge() {
   );
 }
 
-function WipBlocker() {
-  return (
-    <div className="absolute inset-0 z-30 flex items-start justify-center pt-24 md:pt-32 px-4">
-      <div className="bg-brand-cream border-2 border-brand-gold/40 rounded-2xl shadow-2xl max-w-md w-full p-6 text-center">
-        <div className="text-4xl mb-2">🚧</div>
-        <h2 className="font-display text-2xl text-brand-green mb-2">Sezione in lavorazione</h2>
-        <p className="text-sm text-muted-foreground">Sarà presto disponibile.</p>
-      </div>
-    </div>
-  );
-}
-
 export function TopBar({ title, subtitle, right }: { title: string; subtitle?: string; right?: ReactNode }) {
   return (
     <header className="bg-brand-green text-brand-cream px-5 md:px-8 pt-6 pb-5 md:rounded-b-2xl md:mt-4 md:mx-4 sticky md:static top-0 z-40 flex items-start justify-between gap-3">
