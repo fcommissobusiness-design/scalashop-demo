@@ -4,10 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCloudSync, useSyncStatus } from "@/lib/cloudSync";
 import { OnboardingScreen, hasCompletedOnboarding } from "./OnboardingScreen";
 import logoAsset from "@/assets/scalashop-logo.png.asset.json";
-import { isLockedPath, getBusinessName } from "@/lib/demo-flags";
-import { LockedSection } from "@/components/LockedSection";
+import { isLockedPath, getBusinessName, isTrialExpired, ensureTrialStarted } from "@/lib/demo-flags";
 import { PromoMarquee } from "@/components/PromoMarquee";
 import { DemoLockModal } from "@/components/DemoLock";
+import { WA_URL } from "@/lib/wa";
 
 type NavItem = { to: string; label: string; short: string; locked?: boolean };
 type NavGroup = { label: string; items: NavItem[] };
@@ -54,7 +54,9 @@ const MOBILE_PRIMARY: NavItem[] = [
 ];
 
 function AuthScreen() {
-  const mode = "login" as const;
+  const [mode, setMode] = useState<"register" | "login">("register");
+  const [businessName, setBusinessName] = useState("");
+  const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
@@ -65,18 +67,59 @@ function AuthScreen() {
     e.preventDefault();
     setErr(null); setInfo(null); setBusy(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw error;
+      if (mode === "register") {
+        const { data, error } = await supabase.auth.signUp({
+          email, password,
+          options: {
+            emailRedirectTo: window.location.origin,
+            data: { business_name: businessName, phone },
+          },
+        });
+        if (error) throw error;
+        if (!data.session) {
+          const { error: signInErr } = await supabase.auth.signInWithPassword({ email, password });
+          if (signInErr) throw signInErr;
+        }
+        try {
+          const u = (await supabase.auth.getSession()).data.session?.user;
+          if (u) localStorage.setItem(`scalashop-reg:${u.id}`, JSON.stringify({ businessName, phone }));
+        } catch {}
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+      }
     } catch (e: any) {
       setErr(e?.message ?? "Errore di autenticazione");
     } finally { setBusy(false); }
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-brand-cream text-brand-green px-6">
-      <img src={logoAsset.url} alt="ScalaShop" className="h-24 object-contain mb-2" />
-      <p className="text-sm text-muted-foreground mb-8 text-center">Gestionale semplice per food retail artigianale</p>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-brand-cream text-brand-green px-6 py-10">
+      <img src={logoAsset.url} alt="ScalaShop" className="h-20 md:h-24 object-contain mb-2" />
+      <p className="text-sm text-muted-foreground mb-4 text-center max-w-xs">Gestionale semplice per food retail artigianale. Demo gratuita 14 giorni.</p>
+      <div className="flex bg-brand-green-dark/10 rounded-full p-1 mb-4 text-xs font-semibold">
+        <button type="button" onClick={() => setMode("register")}
+          className={`px-4 py-1.5 rounded-full transition ${mode === "register" ? "bg-brand-green text-brand-cream" : "text-brand-green/70"}`}>Registrati</button>
+        <button type="button" onClick={() => setMode("login")}
+          className={`px-4 py-1.5 rounded-full transition ${mode === "login" ? "bg-brand-green text-brand-cream" : "text-brand-green/70"}`}>Accedi</button>
+      </div>
       <form onSubmit={submit} className="w-full max-w-xs space-y-3 bg-brand-green-dark/40 p-5 rounded-2xl">
+        {mode === "register" && (
+          <>
+            <div>
+              <label className="text-[11px] uppercase tracking-wider opacity-80">Nome attività</label>
+              <input type="text" required value={businessName}
+                onChange={(e) => setBusinessName(e.target.value)}
+                className="w-full mt-1 px-3 py-2 rounded-lg bg-brand-cream text-brand-green outline-none" />
+            </div>
+            <div>
+              <label className="text-[11px] uppercase tracking-wider opacity-80">Recapito telefonico</label>
+              <input type="tel" required value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                className="w-full mt-1 px-3 py-2 rounded-lg bg-brand-cream text-brand-green outline-none" />
+            </div>
+          </>
+        )}
         <div>
           <label className="text-[11px] uppercase tracking-wider opacity-80">Email</label>
           <input type="email" autoComplete="email" required value={email}
@@ -85,7 +128,7 @@ function AuthScreen() {
         </div>
         <div>
           <label className="text-[11px] uppercase tracking-wider opacity-80">Password</label>
-          <input type="password" autoComplete="current-password" required minLength={6} value={password}
+          <input type="password" autoComplete={mode === "register" ? "new-password" : "current-password"} required minLength={6} value={password}
             onChange={(e) => setPassword(e.target.value)}
             className="w-full mt-1 px-3 py-2 rounded-lg bg-brand-cream text-brand-green outline-none" />
         </div>
@@ -93,11 +136,11 @@ function AuthScreen() {
         {info && <p className="text-xs text-emerald-300">{info}</p>}
         <button disabled={busy} type="submit"
           className="w-full py-2.5 rounded-lg bg-brand-gold text-brand-green font-semibold disabled:opacity-60">
-          {busy ? "…" : "Accedi"}
+          {busy ? "…" : mode === "register" ? "Registrati" : "Accedi"}
         </button>
       </form>
       <p className="mt-6 text-[11px] opacity-60 max-w-xs text-center">
-        Demo gratuita 14 giorni. Lo stesso account sincronizza ordini, clienti, cassa e magazzino su iPhone, PC e tablet.
+        Lo stesso account sincronizza ordini, clienti, cassa e magazzino su iPhone, PC e tablet.
       </p>
     </div>
   );
@@ -129,8 +172,16 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   const syncStatus = useCloudSync(userId);
 
+  // Avvia il trial alla PRIMA entrata effettiva nella demo (dopo registrazione + onboarding).
+  useEffect(() => {
+    if (!userId) return;
+    if (hasCompletedOnboarding(userId)) ensureTrialStarted(userId);
+  }, [userId]);
+
   if (!authReady) return <div className="min-h-screen bg-brand-green" />;
-  const effectiveUserId = userId ?? "demo-anon";
+  // La demo non deve entrare direttamente: senza login mostriamo la schermata Registrati/Accedi.
+  if (!userId) return <AuthScreen />;
+  const effectiveUserId = userId;
   if (userId && syncStatus === "loading") return (
     <div className="min-h-screen bg-brand-green text-brand-cream flex items-center justify-center text-sm opacity-80">
       Sincronizzazione dati…
@@ -145,6 +196,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   const locked = isLockedPath(path);
   const businessName = getBusinessName(effectiveUserId);
+  const trialExpired = isTrialExpired(effectiveUserId);
 
   return (
     <div className="min-h-screen bg-brand-cream md:flex">
@@ -171,7 +223,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                     <Link key={`${g.label}-${n.to}`} to={n.to}
                       className={`px-3 py-2 rounded-lg text-sm font-medium flex items-center justify-between gap-2 ${active ? "bg-brand-gold/20 text-brand-gold" : "text-brand-cream/80 hover:bg-brand-cream/5"} ${n.locked ? "opacity-70" : ""}`}>
                       <span>{n.label}</span>
-                      {n.locked && <span title="Disponibile con il piano Starter" className="text-[10px] leading-none">🔒</span>}
+                      {n.locked && <span title="Disponibile con il piano a pagamento" className="text-[10px] leading-none">🔒</span>}
                     </Link>
                   );
                 })}
@@ -191,7 +243,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </span>
           </div>
         )}
-        {locked ? <LockedSection /> : children}
+        {locked ? <LockedOverlayWrapper>{children}</LockedOverlayWrapper> : children}
       </main>
 
       {/* Bottom nav mobile */}
@@ -228,7 +280,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                         <Link key={`${g.label}-${n.to}`} to={n.to} onClick={() => setMoreOpen(false)}
                           className={`px-3 py-2.5 rounded-lg text-sm font-medium flex items-center justify-between gap-2 ${active ? "bg-brand-green text-brand-cream" : "bg-card text-foreground/80"} ${n.locked ? "opacity-70" : ""}`}>
                           <span>{n.label}</span>
-                          {n.locked && <span title="Disponibile con il piano Starter" className="text-[10px] leading-none">🔒</span>}
+                          {n.locked && <span title="Disponibile con il piano a pagamento" className="text-[10px] leading-none">🔒</span>}
                         </Link>
                       );
                     })}
@@ -241,7 +293,75 @@ export function AppShell({ children }: { children: ReactNode }) {
       )}
 
       <SyncBadge />
+      <SupportButton />
       <DemoLockModal />
+      {trialExpired && <TrialExpiredOverlay />}
+    </div>
+  );
+}
+
+/** Avvolge una scheda bloccata: rende la pagina reale ma sbiadita, con banner premium centrale. */
+function LockedOverlayWrapper({ children }: { children: ReactNode }) {
+  return (
+    <div className="relative">
+      <div aria-hidden className="opacity-50 blur-[2px] pointer-events-none select-none">
+        {children}
+      </div>
+      <div className="absolute inset-0 z-30 flex items-start justify-center pt-16 md:pt-24 px-4">
+        <div className="bg-brand-cream border-2 border-brand-gold/50 rounded-2xl shadow-2xl max-w-md w-full p-6 text-center">
+          <div className="mx-auto w-12 h-12 rounded-full bg-brand-gold/15 text-brand-gold flex items-center justify-center text-2xl mb-3">🔒</div>
+          <h2 className="font-display text-xl md:text-2xl text-brand-green mb-2">
+            Funzionalità disponibile nel piano a pagamento
+          </h2>
+          <p className="text-sm text-foreground/80">
+            Per sbloccare questa sezione attiva il piano a pagamento di ScalaShop.
+          </p>
+          <a href={WA_URL} target="_blank" rel="noopener noreferrer"
+            className="mt-5 inline-flex items-center justify-center w-full px-5 py-3 rounded-xl bg-brand-gold text-white text-sm font-semibold shadow hover:brightness-105 transition">
+            Attivalo Ora
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Pulsante flottante "Richiedi Assistenza" sempre visibile, apre WhatsApp. */
+function SupportButton() {
+  return (
+    <a
+      href={WA_URL}
+      target="_blank"
+      rel="noopener noreferrer"
+      style={{ bottom: "calc(5.5rem + env(safe-area-inset-bottom))" }}
+      className="fixed md:!bottom-3 left-3 z-40 inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-brand-green text-brand-cream text-[11px] font-semibold shadow-lg border border-brand-gold/40 hover:brightness-110 transition"
+      aria-label="Richiedi Assistenza"
+    >
+      <span aria-hidden>💬</span> Richiedi Assistenza
+    </a>
+  );
+}
+
+/** Overlay che blocca tutta la demo al termine dei 14 giorni di trial. */
+function TrialExpiredOverlay() {
+  return (
+    <div className="fixed inset-0 z-[150] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="bg-brand-cream border-2 border-brand-gold/60 rounded-2xl shadow-2xl max-w-md w-full p-6 md:p-8 text-center">
+        <div className="mx-auto w-14 h-14 rounded-full bg-brand-gold/15 text-brand-gold flex items-center justify-center text-3xl mb-3">🎉</div>
+        <h2 className="font-display text-xl md:text-2xl text-brand-green mb-2 leading-tight">
+          Congratulazioni, hai terminato il periodo di prova di 14 giorni.
+        </h2>
+        <p className="text-sm text-foreground/80">
+          Continua a usare ScalaShop per 1 anno con il piano a pagamento.
+        </p>
+        <p className="text-xs text-brand-green/80 mt-2 font-semibold">
+          Per te, solo fino al 31/07/2026, il 20% di sconto.
+        </p>
+        <a href={WA_URL} target="_blank" rel="noopener noreferrer"
+          className="mt-5 inline-flex items-center justify-center w-full px-5 py-3 rounded-xl bg-brand-gold text-white text-sm font-bold shadow hover:brightness-105 transition">
+          Attivalo Ora
+        </a>
+      </div>
     </div>
   );
 }
@@ -263,18 +383,6 @@ function SyncBadge() {
       className="fixed md:!bottom-3 left-3 md:left-auto md:right-3 z-40 pointer-events-none">
       <div className={`text-[10px] font-semibold px-2 py-1 rounded-full shadow-sm border border-border/50 ${m.color}`}>
         ● {m.label}
-      </div>
-    </div>
-  );
-}
-
-function WipBlocker() {
-  return (
-    <div className="absolute inset-0 z-30 flex items-start justify-center pt-24 md:pt-32 px-4">
-      <div className="bg-brand-cream border-2 border-brand-gold/40 rounded-2xl shadow-2xl max-w-md w-full p-6 text-center">
-        <div className="text-4xl mb-2">🚧</div>
-        <h2 className="font-display text-2xl text-brand-green mb-2">Sezione in lavorazione</h2>
-        <p className="text-sm text-muted-foreground">Sarà presto disponibile.</p>
       </div>
     </div>
   );

@@ -37,8 +37,16 @@ const ORDER_CHANNELS = ["WhatsApp", "Telefono", "Sito", "Email", "Instagram/Face
 export function OnboardingScreen({ userId, onDone }: { userId: string; onDone: () => void }) {
   const { addClient, addProduct } = useStore();
 
+  // Pre-popola dati registrazione (nome attività) se disponibili.
+  const reg = (() => {
+    try {
+      const raw = typeof window !== "undefined" ? localStorage.getItem(`scalashop-reg:${userId}`) : null;
+      return raw ? (JSON.parse(raw) as { businessName?: string; phone?: string }) : null;
+    } catch { return null; }
+  })();
+
   // Attività
-  const [businessName, setBusinessName] = useState("");
+  const [businessName, setBusinessName] = useState(reg?.businessName ?? "");
   const [businessType, setBusinessType] = useState("");
   const [businessTypeOther, setBusinessTypeOther] = useState("");
 

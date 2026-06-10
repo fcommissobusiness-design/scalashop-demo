@@ -17,8 +17,8 @@ function MagazzinoPage() {
       <TopBar title="Magazzino" subtitle="Inventario, lotti, scadenze e fornitori" />
       <div className="p-4 md:p-6 space-y-4">
         <PremiumBanner
-          title="Funzionalità disponibile nel Piano Starter"
-          text="Per gestire magazzino, lotti, scadenze e fornitori attiva il Piano Starter."
+          title="Funzionalità disponibile nel piano a pagamento"
+          text="Per gestire magazzino, lotti, scadenze e fornitori attiva il piano a pagamento."
         />
         <div className="opacity-40 pointer-events-none select-none space-y-1.5">
           {rows.map((r, i) => (
