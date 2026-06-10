@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCloudSync, useSyncStatus } from "@/lib/cloudSync";
 import { OnboardingScreen, hasCompletedOnboarding } from "./OnboardingScreen";
 import logoAsset from "@/assets/scalashop-logo.png.asset.json";
-import { isLockedPath, getBusinessName, isTrialExpired, ensureTrialStarted } from "@/lib/demo-flags";
+import { isLockedPath, getBusinessName, isTrialExpired, ensureTrialStarted, getTrialDaysLeft } from "@/lib/demo-flags";
 import { PromoMarquee } from "@/components/PromoMarquee";
 import { DemoLockModal } from "@/components/DemoLock";
 import { WA_URL } from "@/lib/wa";
@@ -236,6 +236,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       {/* Contenuto */}
       <main className="flex-1 pb-24 md:pb-8 md:max-w-6xl md:mx-auto w-full relative">
         <PromoMarquee />
+        <GlobalTrialBanner userId={effectiveUserId} />
         {businessName && (
           <div className="hidden md:flex justify-end px-6 pt-3 -mb-1">
             <span className="text-xs font-semibold text-brand-green/70 bg-brand-gold/15 border border-brand-gold/30 rounded-full px-3 py-1">
