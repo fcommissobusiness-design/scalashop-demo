@@ -172,8 +172,16 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   const syncStatus = useCloudSync(userId);
 
+  // Avvia il trial alla PRIMA entrata effettiva nella demo (dopo registrazione + onboarding).
+  useEffect(() => {
+    if (!userId) return;
+    if (hasCompletedOnboarding(userId)) ensureTrialStarted(userId);
+  }, [userId]);
+
   if (!authReady) return <div className="min-h-screen bg-brand-green" />;
-  const effectiveUserId = userId ?? "demo-anon";
+  // La demo non deve entrare direttamente: senza login mostriamo la schermata Registrati/Accedi.
+  if (!userId) return <AuthScreen />;
+  const effectiveUserId = userId;
   if (userId && syncStatus === "loading") return (
     <div className="min-h-screen bg-brand-green text-brand-cream flex items-center justify-center text-sm opacity-80">
       Sincronizzazione dati…
@@ -188,6 +196,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   const locked = isLockedPath(path);
   const businessName = getBusinessName(effectiveUserId);
+  const trialExpired = isTrialExpired(effectiveUserId);
 
   return (
     <div className="min-h-screen bg-brand-cream md:flex">
@@ -234,7 +243,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </span>
           </div>
         )}
-        {locked ? <LockedSection /> : children}
+        {locked ? <LockedOverlayWrapper>{children}</LockedOverlayWrapper> : children}
       </main>
 
       {/* Bottom nav mobile */}
@@ -284,7 +293,75 @@ export function AppShell({ children }: { children: ReactNode }) {
       )}
 
       <SyncBadge />
+      <SupportButton />
       <DemoLockModal />
+      {trialExpired && <TrialExpiredOverlay />}
+    </div>
+  );
+}
+
+/** Avvolge una scheda bloccata: rende la pagina reale ma sbiadita, con banner premium centrale. */
+function LockedOverlayWrapper({ children }: { children: ReactNode }) {
+  return (
+    <div className="relative">
+      <div aria-hidden className="opacity-50 blur-[2px] pointer-events-none select-none">
+        {children}
+      </div>
+      <div className="absolute inset-0 z-30 flex items-start justify-center pt-16 md:pt-24 px-4">
+        <div className="bg-brand-cream border-2 border-brand-gold/50 rounded-2xl shadow-2xl max-w-md w-full p-6 text-center">
+          <div className="mx-auto w-12 h-12 rounded-full bg-brand-gold/15 text-brand-gold flex items-center justify-center text-2xl mb-3">🔒</div>
+          <h2 className="font-display text-xl md:text-2xl text-brand-green mb-2">
+            Funzionalità disponibile nel piano a pagamento
+          </h2>
+          <p className="text-sm text-foreground/80">
+            Per sbloccare questa sezione attiva il piano a pagamento di ScalaShop.
+          </p>
+          <a href={WA_URL} target="_blank" rel="noopener noreferrer"
+            className="mt-5 inline-flex items-center justify-center w-full px-5 py-3 rounded-xl bg-brand-gold text-white text-sm font-semibold shadow hover:brightness-105 transition">
+            Attivalo Ora
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Pulsante flottante "Richiedi Assistenza" sempre visibile, apre WhatsApp. */
+function SupportButton() {
+  return (
+    <a
+      href={WA_URL}
+      target="_blank"
+      rel="noopener noreferrer"
+      style={{ bottom: "calc(5.5rem + env(safe-area-inset-bottom))" }}
+      className="fixed md:!bottom-3 left-3 z-40 inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-brand-green text-brand-cream text-[11px] font-semibold shadow-lg border border-brand-gold/40 hover:brightness-110 transition"
+      aria-label="Richiedi Assistenza"
+    >
+      <span aria-hidden>💬</span> Richiedi Assistenza
+    </a>
+  );
+}
+
+/** Overlay che blocca tutta la demo al termine dei 14 giorni di trial. */
+function TrialExpiredOverlay() {
+  return (
+    <div className="fixed inset-0 z-[150] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="bg-brand-cream border-2 border-brand-gold/60 rounded-2xl shadow-2xl max-w-md w-full p-6 md:p-8 text-center">
+        <div className="mx-auto w-14 h-14 rounded-full bg-brand-gold/15 text-brand-gold flex items-center justify-center text-3xl mb-3">🎉</div>
+        <h2 className="font-display text-xl md:text-2xl text-brand-green mb-2 leading-tight">
+          Congratulazioni, hai terminato il periodo di prova di 14 giorni.
+        </h2>
+        <p className="text-sm text-foreground/80">
+          Continua a usare ScalaShop per 1 anno con il piano a pagamento.
+        </p>
+        <p className="text-xs text-brand-green/80 mt-2 font-semibold">
+          Per te, solo fino al 31/07/2026, il 20% di sconto.
+        </p>
+        <a href={WA_URL} target="_blank" rel="noopener noreferrer"
+          className="mt-5 inline-flex items-center justify-center w-full px-5 py-3 rounded-xl bg-brand-gold text-white text-sm font-bold shadow hover:brightness-105 transition">
+          Attivalo Ora
+        </a>
+      </div>
     </div>
   );
 }
