@@ -389,6 +389,29 @@ function SyncBadge() {
   );
 }
 
+/** Banner trial globale: appare subito sotto la barra dinamica su ogni scheda. */
+function GlobalTrialBanner({ userId }: { userId: string }) {
+  const remaining = getTrialDaysLeft(userId);
+  if (remaining <= 0) return null;
+  return (
+    <div className="px-4 md:px-6 pt-3">
+      <div className="rounded-xl px-4 py-3 flex items-center justify-between gap-3 shadow-sm"
+           style={{ background: "linear-gradient(135deg, var(--brand-green), var(--brand-green-dark))" }}>
+        <div className="text-brand-cream min-w-0">
+          <p className="text-[10px] uppercase tracking-wider text-brand-gold font-bold leading-none">Demo gratuita ScalaShop</p>
+          <p className="text-xs md:text-sm mt-1 leading-snug truncate">
+            Ti restano <span className="text-brand-gold font-bold">{remaining} giorn{remaining === 1 ? "o" : "i"}</span> per testare il nuovo sistema operativo della tua attività.
+          </p>
+        </div>
+        <a href={WA_URL} target="_blank" rel="noopener noreferrer"
+           className="shrink-0 inline-flex items-center justify-center px-3 py-2 rounded-lg bg-brand-gold text-white text-xs font-bold shadow hover:brightness-105 transition">
+          Attivalo Ora
+        </a>
+      </div>
+    </div>
+  );
+}
+
 export function TopBar({ title, subtitle, right }: { title: string; subtitle?: string; right?: ReactNode }) {
   return (
     <header className="bg-brand-green text-brand-cream px-5 md:px-8 pt-6 pb-5 md:rounded-b-2xl md:mt-4 md:mx-4 sticky md:static top-0 z-40 flex items-start justify-between gap-3">
