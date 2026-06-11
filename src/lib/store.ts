@@ -200,6 +200,26 @@ export function applyRemoteStore(next: Store) {
 export function isApplyingRemote(): boolean { return _isApplyingRemote; }
 export function resetStoreToSeed() { setStore(SEED); }
 
+/* ============ Demo monitoring meta (synced via user_state) ============ */
+export interface DemoMeta {
+  onboarding?: Record<string, any>;
+  trialStart?: number;
+  firstSeen?: number;
+  lastSeen?: number;
+  loginCount?: number;
+  totalMs?: number;
+}
+export function getDemoMeta(): DemoMeta {
+  return ((getStore() as any).__demoMeta ?? {}) as DemoMeta;
+}
+/** Aggiorna i metadati demo nello snapshot sincronizzato. NON marca il push come
+ *  remoto: il debounce di cloudSync lo invia entro 300ms. */
+export function patchDemoMeta(patch: Partial<DemoMeta>) {
+  const cur = getStore() as any;
+  const meta: DemoMeta = { ...(cur.__demoMeta ?? {}), ...patch };
+  setStore({ ...(cur as Store), __demoMeta: meta } as any);
+}
+
 const uid = (prefix: string) => prefix + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 const nowIso = () => new Date().toISOString();
 
