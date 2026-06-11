@@ -142,6 +142,9 @@ function migrate(parsed: any): Store {
   (out as any).__demoCleanV5 = true;
   (out as any).__demoCleanV6 = true;
   (out as any).__clientsImportV7 = true;
+  if (parsed.__demoMeta && typeof parsed.__demoMeta === "object") {
+    (out as any).__demoMeta = parsed.__demoMeta;
+  }
   return out;
 }
 
