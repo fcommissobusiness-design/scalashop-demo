@@ -9,6 +9,8 @@ import { PromoMarquee } from "@/components/PromoMarquee";
 import { DemoLockModal } from "@/components/DemoLock";
 import { WA_URL } from "@/lib/wa";
 import { notifyAdminRegistration } from "@/lib/notify-admin.functions";
+import { patchDemoMeta, getDemoMeta } from "@/lib/store";
+import { ADMIN_EMAIL } from "@/lib/admin-monitor.functions";
 
 type NavItem = { to: string; label: string; short: string; locked?: boolean };
 type NavGroup = { label: string; items: NavItem[] };
@@ -208,6 +210,7 @@ function AuthScreen() {
 
 export function AppShell({ children }: { children: ReactNode }) {
   const [userId, setUserId] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
   const [authReady, setAuthReady] = useState(false);
   const path = useRouterState({ select: (s) => s.location.pathname });
   const [moreOpen, setMoreOpen] = useState(false);
@@ -222,9 +225,11 @@ export function AppShell({ children }: { children: ReactNode }) {
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUserId(session?.user?.id ?? null);
+      setUserEmail(session?.user?.email ?? null);
     });
     supabase.auth.getSession().then(({ data }) => {
       setUserId(data.session?.user?.id ?? null);
+      setUserEmail(data.session?.user?.email ?? null);
       setAuthReady(true);
     });
     return () => subscription.unsubscribe();
@@ -235,8 +240,48 @@ export function AppShell({ children }: { children: ReactNode }) {
   // Avvia il trial alla PRIMA entrata effettiva nella demo (dopo registrazione + onboarding).
   useEffect(() => {
     if (!userId) return;
-    if (hasCompletedOnboarding(userId)) ensureTrialStarted(userId);
+    if (hasCompletedOnboarding(userId)) {
+      const t = ensureTrialStarted(userId);
+      try {
+        const m = getDemoMeta();
+        if (!m.trialStart) patchDemoMeta({ trialStart: t });
+      } catch {}
+    }
   }, [userId]);
+
+  // Tracking accessi / tempo totale (minimo overhead: 1 push debounced ad ogni
+  // login + 1 al cambio di visibilità o unload).
+  useEffect(() => {
+    if (!userId || syncStatus === "loading") return;
+    const now = Date.now();
+    const m = getDemoMeta();
+    patchDemoMeta({
+      firstSeen: m.firstSeen ?? now,
+      lastSeen: now,
+      loginCount: (m.loginCount ?? 0) + 1,
+    });
+    let start = now;
+    const flush = () => {
+      const elapsed = Date.now() - start;
+      if (elapsed < 1000) return;
+      const cur = getDemoMeta();
+      patchDemoMeta({
+        totalMs: (cur.totalMs ?? 0) + elapsed,
+        lastSeen: Date.now(),
+      });
+      start = Date.now();
+    };
+    const onVis = () => { if (document.visibilityState === "hidden") flush(); else start = Date.now(); };
+    window.addEventListener("beforeunload", flush);
+    window.addEventListener("pagehide", flush);
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      flush();
+      window.removeEventListener("beforeunload", flush);
+      window.removeEventListener("pagehide", flush);
+      document.removeEventListener("visibilitychange", onVis);
+    };
+  }, [userId, syncStatus]);
 
   if (!authReady) return <div className="min-h-screen bg-brand-green" />;
   // La demo non deve entrare direttamente: senza login mostriamo la schermata Registrati/Accedi.
@@ -257,6 +302,13 @@ export function AppShell({ children }: { children: ReactNode }) {
   const locked = isLockedPath(path);
   const businessName = getBusinessName(effectiveUserId);
   const trialExpired = isTrialExpired(effectiveUserId);
+  const isAdmin = (userEmail ?? "").toLowerCase() === ADMIN_EMAIL;
+
+  const onLogout = async () => {
+    if (!confirm("Vuoi davvero uscire?")) return;
+    try { await supabase.auth.signOut(); } catch {}
+    window.location.href = "/";
+  };
 
   return (
     <div className="min-h-screen bg-brand-cream md:flex">
@@ -290,6 +342,22 @@ export function AppShell({ children }: { children: ReactNode }) {
               </div>
             </div>
           ))}
+          {isAdmin && (
+            <div>
+              <p className="text-[10px] uppercase tracking-wider text-brand-cream/50 px-3 mb-1">Amministrazione</p>
+              <Link to="/monitoraggio-demo"
+                className={`px-3 py-2 rounded-lg text-sm font-semibold flex items-center justify-between gap-2 ${isActive("/monitoraggio-demo") ? "bg-brand-gold/20 text-brand-gold" : "text-brand-cream/90 hover:bg-brand-cream/5"}`}>
+                <span>Monitoraggio Demo</span>
+                <span className="text-[10px]">👑</span>
+              </Link>
+            </div>
+          )}
+          <div className="mt-2 pt-3 border-t border-brand-cream/10">
+            <button onClick={onLogout}
+              className="w-full px-3 py-2 rounded-lg text-sm font-medium text-brand-cream/80 hover:bg-brand-cream/5 text-left flex items-center gap-2">
+              <span aria-hidden>⎋</span> Esci
+            </button>
+          </div>
         </nav>
       </aside>
 
@@ -348,6 +416,21 @@ export function AppShell({ children }: { children: ReactNode }) {
                   </div>
                 </div>
               ))}
+              {isAdmin && (
+                <div>
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1.5">Amministrazione</p>
+                  <Link to="/monitoraggio-demo" onClick={() => setMoreOpen(false)}
+                    className="px-3 py-2.5 rounded-lg text-sm font-semibold bg-brand-gold/15 text-brand-green flex items-center justify-between">
+                    <span>Monitoraggio Demo</span><span>👑</span>
+                  </Link>
+                </div>
+              )}
+              <div className="pt-2">
+                <button onClick={() => { setMoreOpen(false); onLogout(); }}
+                  className="w-full px-3 py-2.5 rounded-lg text-sm font-semibold bg-card text-danger border border-danger/30 text-left">
+                  ⎋ Esci dal mio account
+                </button>
+              </div>
             </div>
           </div>
         </div>
