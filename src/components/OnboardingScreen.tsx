@@ -1,10 +1,12 @@
 import { useRef, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { useStore } from "@/lib/store";
 import logoAsset from "@/assets/scalashop-logo.png.asset.json";
 import {
   parseClientsText, parseProductsText, toClient, toProduct, extractFromFile,
   type ParsedClient, type ParsedProduct,
 } from "@/lib/demo-parsers";
+import { ocrExtract } from "@/lib/ocr.functions";
 
 const ONB_KEY = "scalashop-onboarding";
 export type OnbData = {
@@ -36,6 +38,7 @@ const ORDER_CHANNELS = ["WhatsApp", "Telefono", "Sito", "Email", "Instagram/Face
 
 export function OnboardingScreen({ userId, onDone }: { userId: string; onDone: () => void }) {
   const { addClient, addProduct } = useStore();
+  const runOcr = useServerFn(ocrExtract);
 
   // Pre-popola dati registrazione (nome attività) se disponibili.
   const reg = (() => {
@@ -72,19 +75,48 @@ export function OnboardingScreen({ userId, onDone }: { userId: string; onDone: (
   const clientsFileRef = useRef<HTMLInputElement>(null);
 
   const [submitting, setSubmitting] = useState(false);
+  const [errors, setErrors] = useState<Record<string, boolean>>({});
+  const [submitErr, setSubmitErr] = useState<string | null>(null);
+
+  // Refs per scrollare al primo campo mancante
+  const refs = {
+    businessName: useRef<HTMLDivElement>(null),
+    businessType: useRef<HTMLDivElement>(null),
+    businessTypeOther: useRef<HTMLDivElement>(null),
+    takesOrders: useRef<HTMLDivElement>(null),
+    orderChannels: useRef<HTMLDivElement>(null),
+    doesDelivery: useRef<HTMLDivElement>(null),
+    productsCount: useRef<HTMLDivElement>(null),
+    hasClientsList: useRef<HTMLDivElement>(null),
+  } as const;
 
   const toggleChannel = (c: string) =>
     setOrderChannels(prev => prev.includes(c) ? prev.filter(x => x !== c) : [...prev, c]);
 
-  const canSubmit =
-    businessName.trim().length > 1 &&
-    businessType &&
-    (businessType !== "Altro" || businessTypeOther.trim().length > 1) &&
-    takesOrders &&
-    (takesOrders === "no" || orderChannels.length > 0) &&
-    doesDelivery &&
-    productsCount &&
-    hasClientsList;
+  const validate = (): string[] => {
+    const missing: string[] = [];
+    if (businessName.trim().length < 2) missing.push("businessName");
+    if (!businessType) missing.push("businessType");
+    if (businessType === "Altro" && businessTypeOther.trim().length < 2) missing.push("businessTypeOther");
+    if (!takesOrders) missing.push("takesOrders");
+    if (takesOrders === "si" && orderChannels.length === 0) missing.push("orderChannels");
+    if (!doesDelivery) missing.push("doesDelivery");
+    if (!productsCount) missing.push("productsCount");
+    if (!hasClientsList) missing.push("hasClientsList");
+    return missing;
+  };
+
+  const fileToBase64 = (f: File) =>
+    new Promise<string>((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => {
+        const s = String(r.result || "");
+        const idx = s.indexOf("base64,");
+        resolve(idx >= 0 ? s.slice(idx + 7) : s);
+      };
+      r.onerror = () => reject(r.error);
+      r.readAsDataURL(f);
+    });
 
   // ---- File handlers ----
   const onClientsFile = async (f: File) => {
@@ -92,7 +124,16 @@ export function OnboardingScreen({ userId, onDone }: { userId: string; onDone: (
     try {
       const res = await extractFromFile(f);
       if (res.kind === "image") {
-        setClientsMsg("Immagini: per ora copia/incolla i nomi nel riquadro qui sotto.");
+        setClientsMsg("Lettura immagine in corso…");
+        const base64 = await fileToBase64(f);
+        const out = await runOcr({ data: { base64, mime: f.type || "image/jpeg", kind: "clients" } });
+        if (!out?.ok || !out.text?.trim()) {
+          setClientsMsg("Impossibile leggere l'immagine. Incolla l'elenco qui sotto.");
+          return;
+        }
+        setClientsText(prev => prev ? prev + "\n" + out.text : out.text);
+        const parsed = parseClientsText(out.text);
+        setClientsMsg(`Rilevati ${parsed.length} clienti — verranno creati al termine.`);
         return;
       }
       if (!res.text.trim()) { setClientsMsg("File vuoto o non leggibile."); return; }
@@ -110,7 +151,16 @@ export function OnboardingScreen({ userId, onDone }: { userId: string; onDone: (
     try {
       const res = await extractFromFile(f);
       if (res.kind === "image") {
-        setProductsMsg("Immagini: per ora copia/incolla il listino nel riquadro qui sotto.");
+        setProductsMsg("Lettura immagine in corso…");
+        const base64 = await fileToBase64(f);
+        const out = await runOcr({ data: { base64, mime: f.type || "image/jpeg", kind: "products" } });
+        if (!out?.ok || !out.text?.trim()) {
+          setProductsMsg("Impossibile leggere l'immagine. Incolla il listino qui sotto.");
+          return;
+        }
+        setProductsText(prev => prev ? prev + "\n" + out.text : out.text);
+        const parsed = parseProductsText(out.text);
+        setProductsMsg(`Rilevati ${parsed.length} prodotti — verranno creati al termine.`);
         return;
       }
       if (!res.text.trim()) { setProductsMsg("File vuoto o non leggibile."); return; }
@@ -138,7 +188,20 @@ export function OnboardingScreen({ userId, onDone }: { userId: string; onDone: (
   // ---- Submit ----
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!canSubmit || submitting) return;
+    if (submitting) return;
+    const missing = validate();
+    if (missing.length) {
+      const map: Record<string, boolean> = {};
+      missing.forEach(k => (map[k] = true));
+      setErrors(map);
+      setSubmitErr("Compila tutti i campi obbligatori");
+      const firstKey = missing[0] as keyof typeof refs;
+      const el = refs[firstKey]?.current;
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+    setErrors({});
+    setSubmitErr(null);
     setSubmitting(true);
 
     // Parse e crea clienti / prodotti
@@ -189,29 +252,33 @@ export function OnboardingScreen({ userId, onDone }: { userId: string; onDone: (
 
         {/* Blocco 1 — Attività */}
         <Block title="1. Attività" subtitle="Come si chiama e che tipo di attività hai">
-          <LabeledInput label="Nome attività" placeholder="Es. Bottega del Borgo"
-            value={businessName} onChange={setBusinessName} />
-          <div>
+          <div ref={refs.businessName}>
+            <LabeledInput label="Nome attività" placeholder="Es. Bottega del Borgo"
+              value={businessName} onChange={setBusinessName} error={errors.businessName} />
+          </div>
+          <div ref={refs.businessType}>
             <Label>Tipologia attività</Label>
-            <ChipGroup options={BUSINESS_TYPES} value={businessType} onChange={setBusinessType} />
+            <ChipGroup options={BUSINESS_TYPES} value={businessType} onChange={setBusinessType} error={errors.businessType} />
             {businessType === "Altro" && (
-              <input value={businessTypeOther} onChange={e => setBusinessTypeOther(e.target.value)}
-                placeholder="Scrivi la tipologia della tua attività"
-                className="w-full mt-2 px-3 py-2.5 rounded-lg bg-white border border-border text-brand-green outline-none focus:border-brand-gold" />
+              <div ref={refs.businessTypeOther}>
+                <input value={businessTypeOther} onChange={e => setBusinessTypeOther(e.target.value)}
+                  placeholder="Scrivi la tipologia della tua attività"
+                  className={`w-full mt-2 px-3 py-2.5 rounded-lg bg-white border text-brand-green outline-none focus:border-brand-gold ${errors.businessTypeOther ? "border-red-500" : "border-border"}`} />
+              </div>
             )}
           </div>
         </Block>
 
         {/* Blocco 2 — Ordini e consegne */}
         <Block title="2. Ordini e consegne" subtitle="Come ricevi gli ordini dai tuoi clienti">
-          <div>
+          <div ref={refs.takesOrders}>
             <Label>Prendi ordinazioni o prenotazioni dai tuoi clienti?</Label>
-            <YesNo value={takesOrders} onChange={(v) => { setTakesOrders(v); if (v === "no") setOrderChannels([]); }} />
+            <YesNo value={takesOrders} onChange={(v) => { setTakesOrders(v); if (v === "no") setOrderChannels([]); }} error={errors.takesOrders} />
           </div>
           {takesOrders === "si" && (
-            <div>
+            <div ref={refs.orderChannels}>
               <Label>Da quali canali le ricevi? <span className="opacity-60 normal-case font-normal">(seleziona più opzioni)</span></Label>
-              <ChipGroup options={ORDER_CHANNELS} value={orderChannels} onChange={toggleChannel} multi />
+              <ChipGroup options={ORDER_CHANNELS} value={orderChannels} onChange={toggleChannel} multi error={errors.orderChannels} />
               {orderChannels.includes("Altro") && (
                 <input value={orderChannelsOther} onChange={e => setOrderChannelsOther(e.target.value)}
                   placeholder="Scrivi gli altri canali"
@@ -219,17 +286,17 @@ export function OnboardingScreen({ userId, onDone }: { userId: string; onDone: (
               )}
             </div>
           )}
-          <div>
+          <div ref={refs.doesDelivery}>
             <Label>Fai anche consegne a domicilio?</Label>
-            <YesNo value={doesDelivery} onChange={setDoesDelivery} />
+            <YesNo value={doesDelivery} onChange={setDoesDelivery} error={errors.doesDelivery} />
           </div>
         </Block>
 
         {/* Blocco 3 — Prodotti */}
         <Block title="3. Prodotti" subtitle="Quanti prodotti gestisci e (opzionale) carica il tuo listino">
-          <div>
+          <div ref={refs.productsCount}>
             <Label>Numero indicativo di prodotti gestiti</Label>
-            <ChipGroup options={PRODUCTS_RANGES} value={productsCount} onChange={setProductsCount} />
+            <ChipGroup options={PRODUCTS_RANGES} value={productsCount} onChange={setProductsCount} error={errors.productsCount} />
           </div>
           <div>
             <Label>Carica il tuo listino prodotti <span className="opacity-60 normal-case font-normal">(opzionale)</span></Label>
@@ -258,9 +325,9 @@ export function OnboardingScreen({ userId, onDone }: { userId: string; onDone: (
 
         {/* Blocco 4 — Clienti */}
         <Block title="4. Clienti" subtitle="Hai già un elenco dei tuoi clienti abituali?">
-          <div>
+          <div ref={refs.hasClientsList}>
             <Label>Hai un elenco dei tuoi clienti abituali con nome e/o numero di telefono?</Label>
-            <YesNo value={hasClientsList} onChange={(v) => { setHasClientsList(v); if (v === "no") { setClientsText(""); setClientsMsg(null); } }} />
+            <YesNo value={hasClientsList} onChange={(v) => { setHasClientsList(v); if (v === "no") { setClientsText(""); setClientsMsg(null); } }} error={errors.hasClientsList} />
           </div>
           {hasClientsList === "si" && (
             <div>
@@ -286,10 +353,13 @@ export function OnboardingScreen({ userId, onDone }: { userId: string; onDone: (
           )}
         </Block>
 
-        <button type="submit" disabled={!canSubmit || submitting}
+        <button type="submit" disabled={submitting}
           className="w-full py-3.5 rounded-xl bg-brand-gold text-white font-semibold text-base shadow-sm hover:brightness-105 disabled:opacity-50 disabled:cursor-not-allowed transition">
           {submitting ? "Configurazione in corso…" : "Inizia la demo"}
         </button>
+        {submitErr && (
+          <p className="text-sm font-semibold text-red-600 text-center -mt-3">{submitErr}</p>
+        )}
         <p className="text-[11px] text-muted-foreground text-center">
           Potrai aggiungere o modificare clienti, prodotti e impostazioni in qualsiasi momento.
         </p>
@@ -313,19 +383,19 @@ function Block({ title, subtitle, children }: { title: string; subtitle?: string
 function Label({ children }: { children: React.ReactNode }) {
   return <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold mb-1.5">{children}</p>;
 }
-function LabeledInput({ label, placeholder, value, onChange }: { label: string; placeholder?: string; value: string; onChange: (v: string) => void }) {
+function LabeledInput({ label, placeholder, value, onChange, error }: { label: string; placeholder?: string; value: string; onChange: (v: string) => void; error?: boolean }) {
   return (
     <div>
       <Label>{label}</Label>
-      <input value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} required
-        className="w-full px-3 py-2.5 rounded-lg bg-white border border-border text-brand-green outline-none focus:border-brand-gold" />
+      <input value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
+        className={`w-full px-3 py-2.5 rounded-lg bg-white border text-brand-green outline-none focus:border-brand-gold ${error ? "border-red-500" : "border-border"}`} />
     </div>
   );
 }
-function ChipGroup({ options, value, onChange, multi }: { options: string[]; value: string | string[]; onChange: (v: any) => void; multi?: boolean }) {
+function ChipGroup({ options, value, onChange, multi, error }: { options: string[]; value: string | string[]; onChange: (v: any) => void; multi?: boolean; error?: boolean }) {
   const isActive = (o: string) => multi ? (value as string[]).includes(o) : value === o;
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+    <div className={`grid grid-cols-2 md:grid-cols-3 gap-2 ${error ? "p-1 rounded-lg border border-red-500" : ""}`}>
       {options.map(o => (
         <button key={o} type="button" onClick={() => onChange(o)}
           className={`px-3 py-2.5 rounded-lg text-sm font-medium text-left border transition ${isActive(o)
@@ -337,9 +407,9 @@ function ChipGroup({ options, value, onChange, multi }: { options: string[]; val
     </div>
   );
 }
-function YesNo({ value, onChange }: { value: "si" | "no" | ""; onChange: (v: "si" | "no") => void }) {
+function YesNo({ value, onChange, error }: { value: "si" | "no" | ""; onChange: (v: "si" | "no") => void; error?: boolean }) {
   return (
-    <div className="grid grid-cols-2 gap-2">
+    <div className={`grid grid-cols-2 gap-2 ${error ? "p-1 rounded-lg border border-red-500" : ""}`}>
       {(["si", "no"] as const).map(v => (
         <button key={v} type="button" onClick={() => onChange(v)}
           className={`px-3 py-2.5 rounded-lg text-sm font-semibold border transition ${value === v
