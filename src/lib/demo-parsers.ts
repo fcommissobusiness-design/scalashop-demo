@@ -219,10 +219,15 @@ export function toProduct(p: ParsedProduct): Omit<Product, "id"> {
 /* ============ PDF text extraction (lazy) ============ */
 export async function extractPdfText(file: File): Promise<string> {
   const pdfjs: any = await import("pdfjs-dist");
-  // Demo-friendly: niente worker esterno, parse inline (file di listino piccoli).
-  if (pdfjs.GlobalWorkerOptions) pdfjs.GlobalWorkerOptions.workerSrc = "";
+  // Configura il worker via Vite (?url): garantisce parsing affidabile su pdfjs v6.
+  try {
+    const workerUrl = (await import("pdfjs-dist/build/pdf.worker.min.mjs?url")).default;
+    if (pdfjs.GlobalWorkerOptions) pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
+  } catch {
+    if (pdfjs.GlobalWorkerOptions) pdfjs.GlobalWorkerOptions.workerSrc = "";
+  }
   const buf = await file.arrayBuffer();
-  const doc = await pdfjs.getDocument({ data: buf, disableWorker: true }).promise;
+  const doc = await pdfjs.getDocument({ data: buf }).promise;
   let out = "";
   for (let p = 1; p <= doc.numPages; p++) {
     const page = await doc.getPage(p);
