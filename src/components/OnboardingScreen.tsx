@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useStore } from "@/lib/store";
+import { patchDemoMeta } from "@/lib/store";
 import logoAsset from "@/assets/scalashop-logo.png.asset.json";
 import {
   parseClientsText, parseProductsText, toClient, toProduct, extractFromFile,
@@ -236,6 +237,8 @@ export function OnboardingScreen({ userId, onDone }: { userId: string; onDone: (
       completedAt: new Date().toISOString(),
     };
     try { localStorage.setItem(`${ONB_KEY}:${userId}`, JSON.stringify(data)); } catch {}
+    // Mirror onboarding nel cloud (user_state) per il monitoraggio admin.
+    try { patchDemoMeta({ onboarding: data }); } catch {}
     onDone();
   };
 

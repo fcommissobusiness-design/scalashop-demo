@@ -77,6 +77,9 @@ function migrate(parsed: any): Store {
     (wiped as any).__demoCleanV6 = true;
     (wiped as any).__clientsImportV7 = true;
     (wiped as any).__demoResetV8 = true;
+    if (parsed.__demoMeta && typeof parsed.__demoMeta === "object") {
+      (wiped as any).__demoMeta = parsed.__demoMeta;
+    }
     return wiped;
   }
   // One-time refresh of clients list (real customers list) — drop legacy demo clients.
@@ -142,6 +145,9 @@ function migrate(parsed: any): Store {
   (out as any).__demoCleanV5 = true;
   (out as any).__demoCleanV6 = true;
   (out as any).__clientsImportV7 = true;
+  if (parsed.__demoMeta && typeof parsed.__demoMeta === "object") {
+    (out as any).__demoMeta = parsed.__demoMeta;
+  }
   return out;
 }
 
@@ -199,6 +205,26 @@ export function applyRemoteStore(next: Store) {
 }
 export function isApplyingRemote(): boolean { return _isApplyingRemote; }
 export function resetStoreToSeed() { setStore(SEED); }
+
+/* ============ Demo monitoring meta (synced via user_state) ============ */
+export interface DemoMeta {
+  onboarding?: Record<string, any>;
+  trialStart?: number;
+  firstSeen?: number;
+  lastSeen?: number;
+  loginCount?: number;
+  totalMs?: number;
+}
+export function getDemoMeta(): DemoMeta {
+  return ((getStore() as any).__demoMeta ?? {}) as DemoMeta;
+}
+/** Aggiorna i metadati demo nello snapshot sincronizzato. NON marca il push come
+ *  remoto: il debounce di cloudSync lo invia entro 300ms. */
+export function patchDemoMeta(patch: Partial<DemoMeta>) {
+  const cur = getStore() as any;
+  const meta: DemoMeta = { ...(cur.__demoMeta ?? {}), ...patch };
+  setStore({ ...(cur as Store), __demoMeta: meta } as any);
+}
 
 const uid = (prefix: string) => prefix + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 const nowIso = () => new Date().toISOString();
