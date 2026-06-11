@@ -77,6 +77,9 @@ function migrate(parsed: any): Store {
     (wiped as any).__demoCleanV6 = true;
     (wiped as any).__clientsImportV7 = true;
     (wiped as any).__demoResetV8 = true;
+    if (parsed.__demoMeta && typeof parsed.__demoMeta === "object") {
+      (wiped as any).__demoMeta = parsed.__demoMeta;
+    }
     return wiped;
   }
   // One-time refresh of clients list (real customers list) — drop legacy demo clients.
