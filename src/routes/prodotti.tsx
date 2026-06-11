@@ -55,10 +55,13 @@ function ProdottiPage() {
       if (q && !p.name.toLowerCase().includes(q.toLowerCase())) return false;
       return true;
     });
-    const map = new Map<ProductCategory, Product[]>();
-    for (const cat of CATEGORIES) {
-      const items = list.filter(p => p.category === cat);
-      if (items.length) map.set(cat, items);
+    // Demo: nessun filtro/categoria predefinito. Raggruppiamo dinamicamente
+    // SOLO per le categorie effettivamente presenti tra i prodotti caricati.
+    const map = new Map<string, Product[]>();
+    for (const p of list) {
+      const key = (p.category as string) || "Prodotti";
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(p);
     }
     return map;
   }, [products, q]);

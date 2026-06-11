@@ -176,7 +176,12 @@ export function parseProductsText(text: string): ParsedProduct[] {
     let last: RegExpExecArray | null = null;
     let m: RegExpExecArray | null;
     while ((m = priceRe.exec(line)) !== null) last = m;
-    if (!last) continue;
+    if (!last) {
+      // Riga senza prezzo: importiamo comunque il prodotto con prezzo 0.
+      const name = line.replace(/[\-–—|;,€\s]+$/, "").trim();
+      if (name) out.push({ name, price: 0, unit: parseUnit(line) });
+      continue;
+    }
 
     const price = parsePrice(last[1]) ?? 0;
     const unit = (last[2] ? parseUnit(last[2]) : undefined) ?? parseUnit(line);
@@ -184,10 +189,10 @@ export function parseProductsText(text: string): ParsedProduct[] {
     // Nome = tutto prima del prezzo trovato, ripulito da separatori finali.
     let name = line.slice(0, last.index).replace(/[\-–—|;,€\s]+$/, "").trim();
     if (!name) {
-      // Fallback: rimuovi il match e usa il resto
       name = line.replace(last[0], "").replace(/[\-–—|;,€\s]+$/, "").trim();
     }
-    if (name) out.push({ name, price, unit });
+    if (!name) name = line.trim();
+    out.push({ name, price, unit });
   }
   return dedupProducts(out);
 }
@@ -219,10 +224,15 @@ export function toProduct(p: ParsedProduct): Omit<Product, "id"> {
 /* ============ PDF text extraction (lazy) ============ */
 export async function extractPdfText(file: File): Promise<string> {
   const pdfjs: any = await import("pdfjs-dist");
-  // Demo-friendly: niente worker esterno, parse inline (file di listino piccoli).
-  if (pdfjs.GlobalWorkerOptions) pdfjs.GlobalWorkerOptions.workerSrc = "";
+  // Configura il worker via Vite (?url): garantisce parsing affidabile su pdfjs v6.
+  try {
+    const workerUrl = (await import("pdfjs-dist/build/pdf.worker.min.mjs?url")).default;
+    if (pdfjs.GlobalWorkerOptions) pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
+  } catch {
+    if (pdfjs.GlobalWorkerOptions) pdfjs.GlobalWorkerOptions.workerSrc = "";
+  }
   const buf = await file.arrayBuffer();
-  const doc = await pdfjs.getDocument({ data: buf, disableWorker: true }).promise;
+  const doc = await pdfjs.getDocument({ data: buf }).promise;
   let out = "";
   for (let p = 1; p <= doc.numPages; p++) {
     const page = await doc.getPage(p);
