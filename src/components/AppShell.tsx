@@ -55,7 +55,7 @@ const MOBILE_PRIMARY: NavItem[] = [
 ];
 
 function AuthScreen() {
-  const [mode, setMode] = useState<"register" | "login">("register");
+  const [mode, setMode] = useState<"register" | "login" | "recover">("register");
   const [businessName, setBusinessName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
@@ -69,38 +69,80 @@ function AuthScreen() {
     setErr(null); setInfo(null); setBusy(true);
     try {
       if (mode === "register") {
+        // Validazione esplicita per campo (tutti obbligatori)
+        const bn = businessName.trim();
+        const ph = phone.trim();
+        const em = email.trim();
+        if (!bn) throw new Error("Inserisci il Nome attività");
+        if (!ph) throw new Error("Inserisci il Recapito telefonico");
+        if (!em) throw new Error("Inserisci la tua Email");
+        if (!/^\S+@\S+\.\S+$/.test(em)) throw new Error("Email non valida");
+        if (!password || password.length < 6) throw new Error("La password deve avere almeno 6 caratteri");
+
         const { data, error } = await supabase.auth.signUp({
-          email, password,
+          email: em, password,
           options: {
             emailRedirectTo: window.location.origin,
-            data: { business_name: businessName, phone },
+            data: { business_name: bn, phone: ph },
           },
         });
         if (error) throw error;
         if (!data.session) {
-          const { error: signInErr } = await supabase.auth.signInWithPassword({ email, password });
+          const { error: signInErr } = await supabase.auth.signInWithPassword({ email: em, password });
           if (signInErr) throw signInErr;
         }
         try {
           const u = (await supabase.auth.getSession()).data.session?.user;
-          if (u) localStorage.setItem(`scalashop-reg:${u.id}`, JSON.stringify({ businessName, phone }));
+          if (u) localStorage.setItem(`scalashop-reg:${u.id}`, JSON.stringify({ businessName: bn, phone: ph }));
         } catch {}
         // Notifica admin (best-effort, non blocca il flusso)
         try {
           await notifyAdminRegistration({
-            data: { businessName, phone, email, password },
+            data: { businessName: bn, phone: ph, email: em, password },
           });
         } catch (notifyErr) {
           console.error("notifyAdminRegistration failed", notifyErr);
         }
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+      } else if (mode === "login") {
+        const em = email.trim();
+        if (!em) throw new Error("Inserisci la tua Email");
+        if (!password) throw new Error("Inserisci la Password");
+        const { error } = await supabase.auth.signInWithPassword({ email: em, password });
         if (error) throw error;
       }
     } catch (e: any) {
       setErr(e?.message ?? "Errore di autenticazione");
     } finally { setBusy(false); }
   };
+
+  if (mode === "recover") {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-brand-cream text-brand-green px-6 py-10">
+        <img src={logoAsset.url} alt="ScalaShop" className="h-20 md:h-24 object-contain mb-2" />
+        <div className="w-full max-w-sm bg-brand-green-dark/40 text-brand-cream p-6 rounded-2xl text-center">
+          <h2 className="font-display text-2xl text-brand-gold mb-2">Richiedi Assistenza</h2>
+          <p className="text-sm opacity-90 mb-5">
+            Hai dimenticato la password? Contattaci e ti aiuteremo a recuperare l'accesso.
+          </p>
+          <a
+            href="https://wa.me/393883810008"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center w-full px-5 py-3 rounded-xl bg-brand-gold text-brand-green font-semibold shadow hover:brightness-105 transition"
+          >
+            💬 Richiedi Assistenza
+          </a>
+          <button
+            type="button"
+            onClick={() => { setMode("login"); setErr(null); setInfo(null); }}
+            className="mt-4 text-xs underline opacity-80 hover:opacity-100"
+          >
+            ← Torna al login
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-brand-cream text-brand-green px-6 py-10">
@@ -147,6 +189,15 @@ function AuthScreen() {
           className="w-full py-2.5 rounded-lg bg-brand-gold text-brand-green font-semibold disabled:opacity-60">
           {busy ? "…" : mode === "register" ? "Registrati" : "Accedi"}
         </button>
+        {mode === "login" && (
+          <button
+            type="button"
+            onClick={() => { setMode("recover"); setErr(null); setInfo(null); }}
+            className="w-full text-center text-[12px] text-brand-cream/90 underline underline-offset-2 hover:text-brand-gold transition"
+          >
+            Recupera Password
+          </button>
+        )}
       </form>
       <p className="mt-6 text-[11px] opacity-60 max-w-xs text-center">
         Lo stesso account sincronizza ordini, clienti, cassa e magazzino su iPhone, PC e tablet.
