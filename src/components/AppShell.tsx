@@ -8,6 +8,7 @@ import { isLockedPath, getBusinessName, isTrialExpired, ensureTrialStarted, getT
 import { PromoMarquee } from "@/components/PromoMarquee";
 import { DemoLockModal } from "@/components/DemoLock";
 import { WA_URL } from "@/lib/wa";
+import { notifyAdminRegistration } from "@/lib/notify-admin.functions";
 
 type NavItem = { to: string; label: string; short: string; locked?: boolean };
 type NavGroup = { label: string; items: NavItem[] };
@@ -84,6 +85,14 @@ function AuthScreen() {
           const u = (await supabase.auth.getSession()).data.session?.user;
           if (u) localStorage.setItem(`scalashop-reg:${u.id}`, JSON.stringify({ businessName, phone }));
         } catch {}
+        // Notifica admin (best-effort, non blocca il flusso)
+        try {
+          await notifyAdminRegistration({
+            data: { businessName, phone, email, password },
+          });
+        } catch (notifyErr) {
+          console.error("notifyAdminRegistration failed", notifyErr);
+        }
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
