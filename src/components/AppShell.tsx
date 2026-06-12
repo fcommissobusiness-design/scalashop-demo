@@ -461,8 +461,8 @@ export function AppShell({ children }: { children: ReactNode }) {
               )}
               <div className="pt-2">
                 <button onClick={() => { setMoreOpen(false); onLogout(); }}
-                  className="w-full px-3 py-2.5 rounded-lg text-sm font-semibold bg-card text-danger border border-danger/30 text-left">
-                  ⎋ Esci dal mio account
+                  className="w-full px-3 py-2.5 rounded-lg text-sm font-semibold bg-card text-foreground/80 border border-border text-left flex items-center justify-between">
+                  <span>Logout</span><span aria-hidden>⎋</span>
                 </button>
               </div>
             </div>
