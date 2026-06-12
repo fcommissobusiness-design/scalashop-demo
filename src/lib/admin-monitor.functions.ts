@@ -119,6 +119,36 @@ export const getDemoUsers = createServerFn({ method: "GET" })
         onboarding: (meta.onboarding ?? null) as any,
       });
     }
+
+    // Snapshots di account eliminati (KPI restano completi).
+    const { data: deleted, error: delErr } = await supabaseAdmin
+      .from("deleted_demo_users")
+      .select("*");
+    if (delErr) throw delErr;
+    for (const d of (deleted ?? []) as any[]) {
+      rows.push({
+        userId: `deleted:${d.id}`,
+        email: d.email,
+        businessName: d.business_name,
+        phone: d.phone,
+        createdAt: d.created_at_original,
+        firstSeen: d.first_seen_ms != null ? Number(d.first_seen_ms) : null,
+        lastSeen: d.last_seen_ms != null ? Number(d.last_seen_ms) : null,
+        loginCount: Number(d.login_count ?? 0),
+        totalMs: Number(d.total_ms ?? 0),
+        trialStart: d.trial_start_ms != null ? Number(d.trial_start_ms) : null,
+        counts: {
+          clients: Number(d.clients_count ?? 0),
+          products: Number(d.products_count ?? 0),
+          orders: Number(d.orders_count ?? 0),
+          deliveries: Number(d.deliveries_count ?? 0),
+          receipts: Number(d.receipts_count ?? 0),
+        },
+        onboarding: d.onboarding ?? null,
+        deleted: true,
+        deletedAt: d.deleted_at,
+      });
+    }
     return { users: rows };
   });
 
