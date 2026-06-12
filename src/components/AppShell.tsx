@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useCloudSync, useSyncStatus } from "@/lib/cloudSync";
 import { OnboardingScreen, hasCompletedOnboarding } from "./OnboardingScreen";
@@ -214,6 +214,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const path = useRouterState({ select: (s) => s.location.pathname });
   const [moreOpen, setMoreOpen] = useState(false);
   const [onbTick, setOnbTick] = useState(0);
+  const trackedSessionRef = useRef<string | null>(null);
 
   useEffect(() => {
     const h = () => setOnbTick(t => t + 1);
@@ -250,6 +251,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   // login + 1 al cambio di visibilità o unload).
   useEffect(() => {
     if (!userId || syncStatus === "loading") return;
+    if (trackedSessionRef.current === userId) return;
+    trackedSessionRef.current = userId;
     const now = Date.now();
     const m = getDemoMeta();
     patchDemoMeta({
