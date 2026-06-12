@@ -73,13 +73,7 @@ function AdminPage() {
 
   return (
     <div>
-      <TopBar title="Amministrazione" right={
-        <button
-          onClick={async () => { const { supabase } = await import("@/integrations/supabase/client"); await supabase.auth.signOut(); }}
-          className="px-3 py-1.5 rounded-lg bg-brand-cream/10 text-brand-cream text-xs font-semibold hover:bg-brand-cream/20">
-          Esci
-        </button>
-      } />
+      <TopBar title="Amministrazione" />
 
       <div className="p-4 md:p-6 space-y-6">
         {msg && <div className="bg-success/15 text-success rounded-lg p-3 text-sm">{msg}</div>}
