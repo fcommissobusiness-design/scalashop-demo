@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { TopBar } from "@/components/AppShell";
-import { getAdminStatus, getDemoUsers, type DemoUserRow } from "@/lib/admin-monitor.functions";
+import { getAdminStatus, getDemoUsers, deleteDemoUser, type DemoUserRow } from "@/lib/admin-monitor.functions";
 
 export const Route = createFileRoute("/monitoraggio-demo")({
   component: MonitoraggioDemoPage,
@@ -49,8 +49,11 @@ function MonitoraggioDemoPage() {
   const [filter, setFilter] = useState<FilterKey>("all");
   const [sort, setSort] = useState<SortKey>("lastSeen");
   const [openId, setOpenId] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [deleting, setDeleting] = useState(false);
   const fetchAdminStatus = useServerFn(getAdminStatus);
   const fetchUsers = useServerFn(getDemoUsers);
+  const removeDemoUser = useServerFn(deleteDemoUser);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -87,6 +90,33 @@ function MonitoraggioDemoPage() {
   };
 
   useEffect(() => { if (adminReady && isAdmin) void load(); /* eslint-disable-next-line */ }, [adminReady, isAdmin]);
+
+  const toggleSel = (id: string) => {
+    setSelected(prev => {
+      const n = new Set(prev);
+      if (n.has(id)) n.delete(id); else n.add(id);
+      return n;
+    });
+  };
+
+  const handleDelete = async () => {
+    const ids = Array.from(selected).filter(id => !id.startsWith("deleted:"));
+    if (ids.length === 0) {
+      alert("Seleziona almeno un account attivo da eliminare.");
+      return;
+    }
+    if (!confirm(`Eliminare definitivamente ${ids.length} account? L'utente non potrà più accedere alla demo. I dati restano nei KPI.`)) return;
+    setDeleting(true);
+    let errs: string[] = [];
+    for (const id of ids) {
+      try { await removeDemoUser({ data: { userId: id } }); }
+      catch (e: any) { errs.push(`${id.slice(0,8)}: ${e?.message ?? "errore"}`); }
+    }
+    setDeleting(false);
+    setSelected(new Set());
+    if (errs.length) alert("Errori:\n" + errs.join("\n"));
+    await load();
+  };
 
   const filtered = useMemo(() => {
     if (!rows) return [];
@@ -144,9 +174,19 @@ function MonitoraggioDemoPage() {
   return (
     <div>
       <TopBar title="Monitoraggio Demo" subtitle={`${filtered.length} utenti visualizzati`}
-        right={<button onClick={load} className="text-xs bg-brand-gold text-white rounded-lg px-3 py-1.5 font-semibold">
-          {loading ? "…" : "Aggiorna"}
-        </button>} />
+        right={
+          <div className="flex gap-2">
+            {selected.size > 0 && (
+              <button onClick={handleDelete} disabled={deleting}
+                className="text-xs bg-danger text-white rounded-lg px-3 py-1.5 font-semibold disabled:opacity-50">
+                {deleting ? "Eliminazione…" : `Elimina (${Array.from(selected).filter(id => !id.startsWith("deleted:")).length})`}
+              </button>
+            )}
+            <button onClick={load} className="text-xs bg-brand-gold text-white rounded-lg px-3 py-1.5 font-semibold">
+              {loading ? "…" : "Aggiorna"}
+            </button>
+          </div>
+        } />
 
       {err && <div className="mx-4 md:mx-6 mt-3 p-3 rounded-lg bg-danger/10 text-danger text-sm">{err}</div>}
 
@@ -198,19 +238,33 @@ function MonitoraggioDemoPage() {
         {filtered.map(u => {
           const tr = trialOf(u);
           const open = openId === u.userId;
+          const isDeleted = !!u.deleted;
+          const isSel = selected.has(u.userId);
           return (
-            <div key={u.userId} className="bg-card rounded-xl p-4 border border-border">
+            <div key={u.userId} className={`bg-card rounded-xl p-4 border ${isSel ? "border-danger ring-2 ring-danger/30" : "border-border"} ${isDeleted ? "opacity-70" : ""}`}>
               <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="font-display text-base text-brand-green truncate">
-                    {u.businessName || "(senza nome attività)"}
-                  </p>
-                  <p className="text-xs text-muted-foreground truncate">{u.email}</p>
-                  <p className="text-xs text-muted-foreground">{u.phone || "—"}</p>
+                <div className="flex items-start gap-2 min-w-0">
+                  {!isDeleted && (
+                    <input type="checkbox" checked={isSel} onChange={() => toggleSel(u.userId)}
+                      className="mt-1 h-4 w-4 cursor-pointer accent-danger" aria-label="Seleziona account" />
+                  )}
+                  <div className="min-w-0">
+                    <p className="font-display text-base text-brand-green truncate">
+                      {u.businessName || "(senza nome attività)"}
+                    </p>
+                    <p className="text-xs text-muted-foreground truncate">{u.email}</p>
+                    <p className="text-xs text-muted-foreground">{u.phone || "—"}</p>
+                  </div>
                 </div>
-                <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${tr.active ? "bg-success/15 text-success" : "bg-danger/15 text-danger"}`}>
-                  {tr.active ? `${tr.daysLeft}g rimanenti` : "Trial scaduto"}
-                </span>
+                {isDeleted ? (
+                  <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-muted text-muted-foreground">
+                    Eliminato {u.deletedAt ? fmtDate(u.deletedAt) : ""}
+                  </span>
+                ) : (
+                  <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${tr.active ? "bg-success/15 text-success" : "bg-danger/15 text-danger"}`}>
+                    {tr.active ? `${tr.daysLeft}g rimanenti` : "Trial scaduto"}
+                  </span>
+                )}
               </div>
 
               <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
