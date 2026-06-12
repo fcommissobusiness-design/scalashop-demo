@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-export const ADMIN_EMAIL = "rossetonigianni@gmail.com";
+type RoleRow = { user_id: string; role: "admin" | "user" };
 
 export type DemoUserRow = {
   userId: string;
@@ -24,14 +24,39 @@ export type DemoUserRow = {
   onboarding: Record<string, any> | null;
 };
 
+export const getAdminStatus = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await context.supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", context.userId)
+      .eq("role", "admin")
+      .maybeSingle();
+    if (error) throw error;
+    return { isAdmin: data?.role === "admin" };
+  });
+
 export const getDemoUsers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const callerEmail = (context.claims as any)?.email?.toLowerCase?.();
-    if (callerEmail !== ADMIN_EMAIL) {
+    const { data: myRole, error: roleErr } = await context.supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", context.userId)
+      .eq("role", "admin");
+    if (roleErr) throw roleErr;
+    if (!((myRole ?? []) as Pick<RoleRow, "role">[]).some((r) => r.role === "admin")) {
       throw new Error("Forbidden");
     }
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: adminRoles, error: adminRolesErr } = await supabaseAdmin
+      .from("user_roles")
+      .select("user_id, role")
+      .eq("role", "admin");
+    if (adminRolesErr) throw adminRolesErr;
+    const adminIds = new Set(((adminRoles ?? []) as RoleRow[]).map((r) => r.user_id));
 
     // 1) Tutti gli utenti auth (pagina per pagina, demo piccola).
     type AuthUser = {
@@ -62,7 +87,7 @@ export const getDemoUsers = createServerFn({ method: "GET" })
     const rows: DemoUserRow[] = [];
     for (const u of users) {
       const email = (u.email ?? "").toLowerCase();
-      if (!email || email === ADMIN_EMAIL) continue; // escludi admin
+      if (!email || adminIds.has(u.id)) continue; // escludi admin
       const st = stateByUser.get(u.id);
       const data = st?.data ?? {};
       const meta = (data.__demoMeta ?? {}) as Record<string, any>;

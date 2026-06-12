@@ -1,9 +1,9 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { TopBar } from "@/components/AppShell";
-import { getDemoUsers, ADMIN_EMAIL, type DemoUserRow } from "@/lib/admin-monitor.functions";
+import { getAdminStatus, getDemoUsers, type DemoUserRow } from "@/lib/admin-monitor.functions";
 
 export const Route = createFileRoute("/monitoraggio-demo")({
   component: MonitoraggioDemoPage,
@@ -40,22 +40,41 @@ type FilterKey = "all" | "active" | "expired" | "today" | "7d" | "30d";
 type SortKey = "lastSeen" | "createdAt" | "daysLeft" | "orders" | "clients" | "totalMs";
 
 function MonitoraggioDemoPage() {
-  const [email, setEmail] = useState<string | null>(null);
+  const [sessionUserId, setSessionUserId] = useState<string | null>(null);
+  const [adminReady, setAdminReady] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [rows, setRows] = useState<DemoUserRow[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState<FilterKey>("all");
   const [sort, setSort] = useState<SortKey>("lastSeen");
   const [openId, setOpenId] = useState<string | null>(null);
+  const fetchAdminStatus = useServerFn(getAdminStatus);
   const fetchUsers = useServerFn(getDemoUsers);
+  const navigate = useNavigate();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      setEmail(data.session?.user?.email ?? null);
+      setSessionUserId(data.session?.user?.id ?? null);
     });
   }, []);
 
-  const isAdmin = (email ?? "").toLowerCase() === ADMIN_EMAIL;
+  useEffect(() => {
+    if (sessionUserId === null) return;
+    let cancelled = false;
+    setAdminReady(false);
+    fetchAdminStatus({})
+      .then((out: any) => { if (!cancelled) setIsAdmin(out?.isAdmin === true); })
+      .catch(() => { if (!cancelled) setIsAdmin(false); })
+      .finally(() => { if (!cancelled) setAdminReady(true); });
+    return () => { cancelled = true; };
+  }, [sessionUserId, fetchAdminStatus]);
+
+  useEffect(() => {
+    if (adminReady && !isAdmin) {
+      navigate({ to: "/", replace: true });
+    }
+  }, [adminReady, isAdmin, navigate]);
 
   const load = async () => {
     setLoading(true); setErr(null);
@@ -67,7 +86,7 @@ function MonitoraggioDemoPage() {
     } finally { setLoading(false); }
   };
 
-  useEffect(() => { if (isAdmin) void load(); /* eslint-disable-next-line */ }, [isAdmin]);
+  useEffect(() => { if (adminReady && isAdmin) void load(); /* eslint-disable-next-line */ }, [adminReady, isAdmin]);
 
   const filtered = useMemo(() => {
     if (!rows) return [];
@@ -109,11 +128,15 @@ function MonitoraggioDemoPage() {
     return { total: r.length, active, expired, logins7, orders, clients, products, deliveries, receipts };
   }, [rows]);
 
-  if (email !== null && !isAdmin) {
+  if (sessionUserId !== null && !isAdmin) {
+    return null;
+  }
+
+  if (sessionUserId === null || !adminReady) {
     return (
       <div>
-        <TopBar title="Accesso negato" />
-        <div className="p-6 text-sm text-muted-foreground">Questa sezione è riservata.</div>
+        <TopBar title="Monitoraggio Demo" subtitle="Verifica account amministratore…" />
+        <div className="p-6 text-sm text-muted-foreground">Caricamento…</div>
       </div>
     );
   }
@@ -168,7 +191,9 @@ function MonitoraggioDemoPage() {
       <div className="p-4 md:p-6 grid grid-cols-1 md:grid-cols-2 gap-3">
         {rows === null && <div className="text-sm text-muted-foreground">Caricamento…</div>}
         {rows !== null && filtered.length === 0 && (
-          <div className="text-sm text-muted-foreground">Nessun utente con i filtri scelti.</div>
+          <div className="md:col-span-2 bg-card border border-border rounded-xl p-4 text-sm text-muted-foreground">
+            Nessun utente demo da mostrare con i filtri scelti. L'account amministratore è escluso automaticamente dal monitoraggio.
+          </div>
         )}
         {filtered.map(u => {
           const tr = trialOf(u);

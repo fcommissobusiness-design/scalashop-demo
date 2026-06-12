@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useCloudSync, useSyncStatus } from "@/lib/cloudSync";
 import { OnboardingScreen, hasCompletedOnboarding } from "./OnboardingScreen";
@@ -10,7 +10,6 @@ import { DemoLockModal } from "@/components/DemoLock";
 import { WA_URL } from "@/lib/wa";
 import { notifyAdminRegistration } from "@/lib/notify-admin.functions";
 import { patchDemoMeta, getDemoMeta } from "@/lib/store";
-import { ADMIN_EMAIL } from "@/lib/admin-monitor.functions";
 
 type NavItem = { to: string; label: string; short: string; locked?: boolean };
 type NavGroup = { label: string; items: NavItem[] };
@@ -210,11 +209,13 @@ function AuthScreen() {
 
 export function AppShell({ children }: { children: ReactNode }) {
   const [userId, setUserId] = useState<string | null>(null);
-  const [userEmail, setUserEmail] = useState<string | null>(null);
   const [authReady, setAuthReady] = useState(false);
+  const [adminReady, setAdminReady] = useState(false);
+  const [isAdminAccount, setIsAdminAccount] = useState(false);
   const path = useRouterState({ select: (s) => s.location.pathname });
   const [moreOpen, setMoreOpen] = useState(false);
   const [onbTick, setOnbTick] = useState(0);
+  const trackedSessionRef = useRef<string | null>(null);
 
   useEffect(() => {
     const h = () => setOnbTick(t => t + 1);
@@ -225,15 +226,40 @@ export function AppShell({ children }: { children: ReactNode }) {
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUserId(session?.user?.id ?? null);
-      setUserEmail(session?.user?.email ?? null);
     });
     supabase.auth.getSession().then(({ data }) => {
       setUserId(data.session?.user?.id ?? null);
-      setUserEmail(data.session?.user?.email ?? null);
       setAuthReady(true);
     });
     return () => subscription.unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (!userId) {
+      setIsAdminAccount(false);
+      setAdminReady(true);
+      trackedSessionRef.current = null;
+      return;
+    }
+    let cancelled = false;
+    setAdminReady(false);
+    void (async () => {
+      try {
+        const { data } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", userId)
+          .eq("role", "admin")
+          .maybeSingle();
+        if (!cancelled) setIsAdminAccount(data?.role === "admin");
+      } catch {
+        if (!cancelled) setIsAdminAccount(false);
+      } finally {
+        if (!cancelled) setAdminReady(true);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [userId]);
 
   const syncStatus = useCloudSync(userId);
 
@@ -253,6 +279,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   // login + 1 al cambio di visibilità o unload).
   useEffect(() => {
     if (!userId || syncStatus === "loading") return;
+    if (trackedSessionRef.current === userId) return;
+    trackedSessionRef.current = userId;
     const now = Date.now();
     const m = getDemoMeta();
     patchDemoMeta({
@@ -293,16 +321,21 @@ export function AppShell({ children }: { children: ReactNode }) {
     </div>
   );
   void onbTick;
-  if (!hasCompletedOnboarding(effectiveUserId)) {
+  if (!adminReady) return (
+    <div className="min-h-screen bg-brand-green text-brand-cream flex items-center justify-center text-sm opacity-80">
+      Caricamento account…
+    </div>
+  );
+  const isAdmin = isAdminAccount;
+  if (!isAdmin && !hasCompletedOnboarding(effectiveUserId)) {
     return <OnboardingScreen userId={effectiveUserId} onDone={() => window.dispatchEvent(new Event("scalashop-onboarded"))} />;
   }
 
   const isActive = (to: string) => to === "/" ? path === "/" : path.startsWith(to);
 
   const locked = isLockedPath(path);
-  const businessName = getBusinessName(effectiveUserId);
-  const trialExpired = isTrialExpired(effectiveUserId);
-  const isAdmin = (userEmail ?? "").toLowerCase() === ADMIN_EMAIL;
+  const businessName = getBusinessName(effectiveUserId) || (isAdmin ? "Demo ScalaShop" : "");
+  const trialExpired = !isAdmin && isTrialExpired(effectiveUserId);
 
   const onLogout = async () => {
     if (!confirm("Vuoi davvero uscire?")) return;
@@ -353,9 +386,10 @@ export function AppShell({ children }: { children: ReactNode }) {
             </div>
           )}
           <div className="mt-2 pt-3 border-t border-brand-cream/10">
+            <p className="text-[10px] uppercase tracking-wider text-brand-cream/50 px-3 mb-1">Account</p>
             <button onClick={onLogout}
               className="w-full px-3 py-2 rounded-lg text-sm font-medium text-brand-cream/80 hover:bg-brand-cream/5 text-left flex items-center gap-2">
-              <span aria-hidden>⎋</span> Esci
+              <span aria-hidden>⎋</span> Logout
             </button>
           </div>
         </nav>
@@ -427,8 +461,8 @@ export function AppShell({ children }: { children: ReactNode }) {
               )}
               <div className="pt-2">
                 <button onClick={() => { setMoreOpen(false); onLogout(); }}
-                  className="w-full px-3 py-2.5 rounded-lg text-sm font-semibold bg-card text-danger border border-danger/30 text-left">
-                  ⎋ Esci dal mio account
+                  className="w-full px-3 py-2.5 rounded-lg text-sm font-semibold bg-card text-foreground/80 border border-border text-left flex items-center justify-between">
+                  <span>Logout</span><span aria-hidden>⎋</span>
                 </button>
               </div>
             </div>
