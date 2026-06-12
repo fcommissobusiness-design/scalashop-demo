@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -48,6 +48,7 @@ function MonitoraggioDemoPage() {
   const [sort, setSort] = useState<SortKey>("lastSeen");
   const [openId, setOpenId] = useState<string | null>(null);
   const fetchUsers = useServerFn(getDemoUsers);
+  const navigate = useNavigate();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -56,6 +57,12 @@ function MonitoraggioDemoPage() {
   }, []);
 
   const isAdmin = isAdminDemoAccount(sessionUserId);
+
+  useEffect(() => {
+    if (sessionUserId !== null && !isAdmin) {
+      navigate({ to: "/", replace: true });
+    }
+  }, [sessionUserId, isAdmin, navigate]);
 
   const load = async () => {
     setLoading(true); setErr(null);
@@ -110,12 +117,7 @@ function MonitoraggioDemoPage() {
   }, [rows]);
 
   if (sessionUserId !== null && !isAdmin) {
-    return (
-      <div>
-        <TopBar title="Accesso negato" />
-        <div className="p-6 text-sm text-muted-foreground">Questa sezione è riservata.</div>
-      </div>
-    );
+    return null;
   }
 
   return (
