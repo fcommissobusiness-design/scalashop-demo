@@ -41,16 +41,23 @@ export const getAdminStatus = createServerFn({ method: "GET" })
 export const getDemoUsers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data: roleRows, error: roleErr } = await context.supabase
+    const { data: myRole, error: roleErr } = await context.supabase
       .from("user_roles")
-      .select("user_id, role")
+      .select("role")
+      .eq("user_id", context.userId)
       .eq("role", "admin");
     if (roleErr) throw roleErr;
-    const adminIds = new Set(((roleRows ?? []) as RoleRow[]).map((r) => r.user_id));
-    if (!adminIds.has(context.userId)) {
+    if (!((myRole ?? []) as Pick<RoleRow, "role">[]).some((r) => r.role === "admin")) {
       throw new Error("Forbidden");
     }
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: adminRoles, error: adminRolesErr } = await supabaseAdmin
+      .from("user_roles")
+      .select("user_id, role")
+      .eq("role", "admin");
+    if (adminRolesErr) throw adminRolesErr;
+    const adminIds = new Set(((adminRoles ?? []) as RoleRow[]).map((r) => r.user_id));
 
     // 1) Tutti gli utenti auth (pagina per pagina, demo piccola).
     type AuthUser = {
