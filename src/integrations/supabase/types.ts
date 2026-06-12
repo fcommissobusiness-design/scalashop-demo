@@ -14,6 +14,72 @@ export type Database = {
   }
   public: {
     Tables: {
+      deleted_demo_users: {
+        Row: {
+          business_name: string | null
+          clients_count: number
+          created_at_original: string | null
+          deleted_at: string
+          deleted_by: string | null
+          deliveries_count: number
+          email: string | null
+          first_seen_ms: number | null
+          id: string
+          last_seen_ms: number | null
+          login_count: number
+          onboarding: Json | null
+          orders_count: number
+          original_user_id: string
+          phone: string | null
+          products_count: number
+          receipts_count: number
+          total_ms: number
+          trial_start_ms: number | null
+        }
+        Insert: {
+          business_name?: string | null
+          clients_count?: number
+          created_at_original?: string | null
+          deleted_at?: string
+          deleted_by?: string | null
+          deliveries_count?: number
+          email?: string | null
+          first_seen_ms?: number | null
+          id?: string
+          last_seen_ms?: number | null
+          login_count?: number
+          onboarding?: Json | null
+          orders_count?: number
+          original_user_id: string
+          phone?: string | null
+          products_count?: number
+          receipts_count?: number
+          total_ms?: number
+          trial_start_ms?: number | null
+        }
+        Update: {
+          business_name?: string | null
+          clients_count?: number
+          created_at_original?: string | null
+          deleted_at?: string
+          deleted_by?: string | null
+          deliveries_count?: number
+          email?: string | null
+          first_seen_ms?: number | null
+          id?: string
+          last_seen_ms?: number | null
+          login_count?: number
+          onboarding?: Json | null
+          orders_count?: number
+          original_user_id?: string
+          phone?: string | null
+          products_count?: number
+          receipts_count?: number
+          total_ms?: number
+          trial_start_ms?: number | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
