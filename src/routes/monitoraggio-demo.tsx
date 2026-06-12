@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { TopBar } from "@/components/AppShell";
-import { getDemoUsers, isAdminDemoAccount, type DemoUserRow } from "@/lib/admin-monitor.functions";
+import { getAdminStatus, getDemoUsers, type DemoUserRow } from "@/lib/admin-monitor.functions";
 
 export const Route = createFileRoute("/monitoraggio-demo")({
   component: MonitoraggioDemoPage,
@@ -41,12 +41,15 @@ type SortKey = "lastSeen" | "createdAt" | "daysLeft" | "orders" | "clients" | "t
 
 function MonitoraggioDemoPage() {
   const [sessionUserId, setSessionUserId] = useState<string | null>(null);
+  const [adminReady, setAdminReady] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [rows, setRows] = useState<DemoUserRow[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState<FilterKey>("all");
   const [sort, setSort] = useState<SortKey>("lastSeen");
   const [openId, setOpenId] = useState<string | null>(null);
+  const fetchAdminStatus = useServerFn(getAdminStatus);
   const fetchUsers = useServerFn(getDemoUsers);
   const navigate = useNavigate();
 
@@ -56,13 +59,22 @@ function MonitoraggioDemoPage() {
     });
   }, []);
 
-  const isAdmin = isAdminDemoAccount(sessionUserId);
+  useEffect(() => {
+    if (sessionUserId === null) return;
+    let cancelled = false;
+    setAdminReady(false);
+    fetchAdminStatus({})
+      .then((out: any) => { if (!cancelled) setIsAdmin(out?.isAdmin === true); })
+      .catch(() => { if (!cancelled) setIsAdmin(false); })
+      .finally(() => { if (!cancelled) setAdminReady(true); });
+    return () => { cancelled = true; };
+  }, [sessionUserId, fetchAdminStatus]);
 
   useEffect(() => {
-    if (sessionUserId !== null && !isAdmin) {
+    if (adminReady && !isAdmin) {
       navigate({ to: "/", replace: true });
     }
-  }, [sessionUserId, isAdmin, navigate]);
+  }, [adminReady, isAdmin, navigate]);
 
   const load = async () => {
     setLoading(true); setErr(null);
@@ -74,7 +86,7 @@ function MonitoraggioDemoPage() {
     } finally { setLoading(false); }
   };
 
-  useEffect(() => { if (isAdmin) void load(); /* eslint-disable-next-line */ }, [isAdmin]);
+  useEffect(() => { if (adminReady && isAdmin) void load(); /* eslint-disable-next-line */ }, [adminReady, isAdmin]);
 
   const filtered = useMemo(() => {
     if (!rows) return [];
