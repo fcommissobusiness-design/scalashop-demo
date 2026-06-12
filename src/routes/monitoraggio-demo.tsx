@@ -132,6 +132,15 @@ function MonitoraggioDemoPage() {
     return null;
   }
 
+  if (sessionUserId === null || !adminReady) {
+    return (
+      <div>
+        <TopBar title="Monitoraggio Demo" subtitle="Verifica account amministratore…" />
+        <div className="p-6 text-sm text-muted-foreground">Caricamento…</div>
+      </div>
+    );
+  }
+
   return (
     <div>
       <TopBar title="Monitoraggio Demo" subtitle={`${filtered.length} utenti visualizzati`}
@@ -182,7 +191,9 @@ function MonitoraggioDemoPage() {
       <div className="p-4 md:p-6 grid grid-cols-1 md:grid-cols-2 gap-3">
         {rows === null && <div className="text-sm text-muted-foreground">Caricamento…</div>}
         {rows !== null && filtered.length === 0 && (
-          <div className="text-sm text-muted-foreground">Nessun utente con i filtri scelti.</div>
+          <div className="md:col-span-2 bg-card border border-border rounded-xl p-4 text-sm text-muted-foreground">
+            Nessun utente demo da mostrare con i filtri scelti. L'account amministratore è escluso automaticamente dal monitoraggio.
+          </div>
         )}
         {filtered.map(u => {
           const tr = trialOf(u);
