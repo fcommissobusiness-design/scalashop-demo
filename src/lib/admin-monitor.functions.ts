@@ -1,7 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-export const ADMIN_EMAIL = "rossetonigianni@gmail.com";
 type RoleRow = { user_id: string; role: "admin" | "user" };
 
 export type DemoUserRow = {
