@@ -243,21 +243,21 @@ export function AppShell({ children }: { children: ReactNode }) {
     }
     let cancelled = false;
     setAdminReady(false);
-    supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", userId)
-      .eq("role", "admin")
-      .maybeSingle()
-      .then(({ data }) => {
+    void (async () => {
+      try {
+        const { data } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", userId)
+          .eq("role", "admin")
+          .maybeSingle();
         if (!cancelled) setIsAdminAccount(data?.role === "admin");
-      })
-      .catch(() => {
+      } catch {
         if (!cancelled) setIsAdminAccount(false);
-      })
-      .finally(() => {
+      } finally {
         if (!cancelled) setAdminReady(true);
-      });
+      }
+    })();
     return () => { cancelled = true; };
   }, [userId]);
 
