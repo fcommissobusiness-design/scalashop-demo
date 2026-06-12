@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { TopBar } from "@/components/AppShell";
-import { getDemoUsers, ADMIN_EMAIL, type DemoUserRow } from "@/lib/admin-monitor.functions";
+import { getDemoUsers, isAdminDemoAccount, type DemoUserRow } from "@/lib/admin-monitor.functions";
 
 export const Route = createFileRoute("/monitoraggio-demo")({
   component: MonitoraggioDemoPage,
@@ -40,7 +40,7 @@ type FilterKey = "all" | "active" | "expired" | "today" | "7d" | "30d";
 type SortKey = "lastSeen" | "createdAt" | "daysLeft" | "orders" | "clients" | "totalMs";
 
 function MonitoraggioDemoPage() {
-  const [email, setEmail] = useState<string | null>(null);
+  const [sessionUserId, setSessionUserId] = useState<string | null>(null);
   const [rows, setRows] = useState<DemoUserRow[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -51,11 +51,11 @@ function MonitoraggioDemoPage() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      setEmail(data.session?.user?.email ?? null);
+      setSessionUserId(data.session?.user?.id ?? null);
     });
   }, []);
 
-  const isAdmin = (email ?? "").toLowerCase() === ADMIN_EMAIL;
+  const isAdmin = isAdminDemoAccount(sessionUserId);
 
   const load = async () => {
     setLoading(true); setErr(null);
@@ -109,7 +109,7 @@ function MonitoraggioDemoPage() {
     return { total: r.length, active, expired, logins7, orders, clients, products, deliveries, receipts };
   }, [rows]);
 
-  if (email !== null && !isAdmin) {
+  if (sessionUserId !== null && !isAdmin) {
     return (
       <div>
         <TopBar title="Accesso negato" />
