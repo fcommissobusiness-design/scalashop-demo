@@ -10,7 +10,7 @@ import { DemoLockModal } from "@/components/DemoLock";
 import { WA_URL } from "@/lib/wa";
 import { notifyAdminRegistration } from "@/lib/notify-admin.functions";
 import { patchDemoMeta, getDemoMeta } from "@/lib/store";
-import { ADMIN_EMAIL } from "@/lib/admin-monitor.functions";
+import { isAdminDemoAccount } from "@/lib/admin-monitor.functions";
 
 type NavItem = { to: string; label: string; short: string; locked?: boolean };
 type NavGroup = { label: string; items: NavItem[] };
@@ -210,7 +210,6 @@ function AuthScreen() {
 
 export function AppShell({ children }: { children: ReactNode }) {
   const [userId, setUserId] = useState<string | null>(null);
-  const [userEmail, setUserEmail] = useState<string | null>(null);
   const [authReady, setAuthReady] = useState(false);
   const path = useRouterState({ select: (s) => s.location.pathname });
   const [moreOpen, setMoreOpen] = useState(false);
@@ -225,11 +224,9 @@ export function AppShell({ children }: { children: ReactNode }) {
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUserId(session?.user?.id ?? null);
-      setUserEmail(session?.user?.email ?? null);
     });
     supabase.auth.getSession().then(({ data }) => {
       setUserId(data.session?.user?.id ?? null);
-      setUserEmail(data.session?.user?.email ?? null);
       setAuthReady(true);
     });
     return () => subscription.unsubscribe();
@@ -302,7 +299,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const locked = isLockedPath(path);
   const businessName = getBusinessName(effectiveUserId);
   const trialExpired = isTrialExpired(effectiveUserId);
-  const isAdmin = (userEmail ?? "").toLowerCase() === ADMIN_EMAIL;
+  const isAdmin = isAdminDemoAccount(effectiveUserId);
 
   const onLogout = async () => {
     if (!confirm("Vuoi davvero uscire?")) return;
@@ -353,9 +350,10 @@ export function AppShell({ children }: { children: ReactNode }) {
             </div>
           )}
           <div className="mt-2 pt-3 border-t border-brand-cream/10">
+            <p className="text-[10px] uppercase tracking-wider text-brand-cream/50 px-3 mb-1">Account</p>
             <button onClick={onLogout}
               className="w-full px-3 py-2 rounded-lg text-sm font-medium text-brand-cream/80 hover:bg-brand-cream/5 text-left flex items-center gap-2">
-              <span aria-hidden>⎋</span> Esci
+              <span aria-hidden>⎋</span> Logout
             </button>
           </div>
         </nav>
