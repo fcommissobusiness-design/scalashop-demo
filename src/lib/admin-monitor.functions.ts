@@ -22,6 +22,8 @@ export type DemoUserRow = {
     receipts: number;
   };
   onboarding: Record<string, any> | null;
+  deleted?: boolean;
+  deletedAt?: string | null;
 };
 
 export const getAdminStatus = createServerFn({ method: "GET" })
@@ -118,4 +120,72 @@ export const getDemoUsers = createServerFn({ method: "GET" })
       });
     }
     return { users: rows };
+  });
+
+async function assertAdmin(context: { supabase: any; userId: string }) {
+  const { data: myRole, error: roleErr } = await context.supabase
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", context.userId)
+    .eq("role", "admin");
+  if (roleErr) throw roleErr;
+  if (!((myRole ?? []) as Pick<RoleRow, "role">[]).some((r) => r.role === "admin")) {
+    throw new Error("Forbidden");
+  }
+}
+
+export const deleteDemoUser = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { userId: string }) => {
+    if (!input?.userId || typeof input.userId !== "string") throw new Error("userId richiesto");
+    return input;
+  })
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as any);
+    if (data.userId === context.userId) throw new Error("Non puoi eliminare il tuo account admin");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // safety: never delete another admin
+    const { data: targetRoles } = await supabaseAdmin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", data.userId)
+      .eq("role", "admin");
+    if ((targetRoles ?? []).length > 0) throw new Error("Non è possibile eliminare un account admin");
+
+    // load auth user + state for snapshot
+    const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(data.userId);
+    const { data: stateRow } = await supabaseAdmin
+      .from("user_state")
+      .select("data")
+      .eq("user_id", data.userId)
+      .maybeSingle();
+    const stateData: any = (stateRow as any)?.data ?? {};
+    const meta = (stateData.__demoMeta ?? {}) as Record<string, any>;
+    const len = (k: string) => (Array.isArray(stateData?.[k]) ? stateData[k].length : 0);
+
+    await supabaseAdmin.from("deleted_demo_users").insert({
+      original_user_id: data.userId,
+      email: authUser?.user?.email ?? null,
+      business_name: meta?.onboarding?.businessName ?? authUser?.user?.user_metadata?.business_name ?? null,
+      phone: meta?.onboarding?.phone ?? authUser?.user?.user_metadata?.phone ?? null,
+      created_at_original: authUser?.user?.created_at ?? null,
+      first_seen_ms: typeof meta.firstSeen === "number" ? meta.firstSeen : null,
+      last_seen_ms: typeof meta.lastSeen === "number" ? meta.lastSeen : null,
+      login_count: Number(meta.loginCount ?? 0),
+      total_ms: Number(meta.totalMs ?? 0),
+      trial_start_ms: typeof meta.trialStart === "number" ? meta.trialStart : null,
+      clients_count: len("clients"),
+      products_count: len("products"),
+      orders_count: len("orders"),
+      deliveries_count: len("deliveries"),
+      receipts_count: len("casualSales"),
+      onboarding: meta.onboarding ?? null,
+      deleted_by: context.userId,
+    });
+
+    // cascade removes user_state, user_roles row, etc.
+    const { error: delErr } = await supabaseAdmin.auth.admin.deleteUser(data.userId);
+    if (delErr) throw delErr;
+    return { ok: true };
   });
