@@ -10,7 +10,6 @@ import { DemoLockModal } from "@/components/DemoLock";
 import { WA_URL } from "@/lib/wa";
 import { notifyAdminRegistration } from "@/lib/notify-admin.functions";
 import { patchDemoMeta, getDemoMeta } from "@/lib/store";
-import { isAdminDemoAccount } from "@/lib/admin-monitor.functions";
 
 type NavItem = { to: string; label: string; short: string; locked?: boolean };
 type NavGroup = { label: string; items: NavItem[] };
@@ -211,6 +210,8 @@ function AuthScreen() {
 export function AppShell({ children }: { children: ReactNode }) {
   const [userId, setUserId] = useState<string | null>(null);
   const [authReady, setAuthReady] = useState(false);
+  const [adminReady, setAdminReady] = useState(false);
+  const [isAdminAccount, setIsAdminAccount] = useState(false);
   const path = useRouterState({ select: (s) => s.location.pathname });
   const [moreOpen, setMoreOpen] = useState(false);
   const [onbTick, setOnbTick] = useState(0);
@@ -232,6 +233,33 @@ export function AppShell({ children }: { children: ReactNode }) {
     });
     return () => subscription.unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (!userId) {
+      setIsAdminAccount(false);
+      setAdminReady(true);
+      trackedSessionRef.current = null;
+      return;
+    }
+    let cancelled = false;
+    setAdminReady(false);
+    supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId)
+      .eq("role", "admin")
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!cancelled) setIsAdminAccount(data?.role === "admin");
+      })
+      .catch(() => {
+        if (!cancelled) setIsAdminAccount(false);
+      })
+      .finally(() => {
+        if (!cancelled) setAdminReady(true);
+      });
+    return () => { cancelled = true; };
+  }, [userId]);
 
   const syncStatus = useCloudSync(userId);
 
@@ -293,7 +321,12 @@ export function AppShell({ children }: { children: ReactNode }) {
     </div>
   );
   void onbTick;
-  const isAdmin = isAdminDemoAccount(effectiveUserId);
+  if (!adminReady) return (
+    <div className="min-h-screen bg-brand-green text-brand-cream flex items-center justify-center text-sm opacity-80">
+      Caricamento account…
+    </div>
+  );
+  const isAdmin = isAdminAccount;
   if (!isAdmin && !hasCompletedOnboarding(effectiveUserId)) {
     return <OnboardingScreen userId={effectiveUserId} onDone={() => window.dispatchEvent(new Event("scalashop-onboarded"))} />;
   }
