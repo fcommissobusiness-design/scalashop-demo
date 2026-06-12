@@ -2,6 +2,11 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export const ADMIN_EMAIL = "rossetonigianni@gmail.com";
+const ADMIN_USER_ID = "e7a93a94-878e-45de-97eb-5bae42052044";
+
+export function isAdminDemoAccount(userId?: string | null): boolean {
+  return !!userId && userId === ADMIN_USER_ID;
+}
 
 export type DemoUserRow = {
   userId: string;
@@ -27,8 +32,7 @@ export type DemoUserRow = {
 export const getDemoUsers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const callerEmail = (context.claims as any)?.email?.toLowerCase?.();
-    if (callerEmail !== ADMIN_EMAIL) {
+    if (!isAdminDemoAccount(context.userId)) {
       throw new Error("Forbidden");
     }
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -62,7 +66,7 @@ export const getDemoUsers = createServerFn({ method: "GET" })
     const rows: DemoUserRow[] = [];
     for (const u of users) {
       const email = (u.email ?? "").toLowerCase();
-      if (!email || email === ADMIN_EMAIL) continue; // escludi admin
+      if (!email || isAdminDemoAccount(u.id)) continue; // escludi admin
       const st = stateByUser.get(u.id);
       const data = st?.data ?? {};
       const meta = (data.__demoMeta ?? {}) as Record<string, any>;
