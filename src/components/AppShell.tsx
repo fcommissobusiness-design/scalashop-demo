@@ -290,16 +290,16 @@ export function AppShell({ children }: { children: ReactNode }) {
     </div>
   );
   void onbTick;
-  if (!hasCompletedOnboarding(effectiveUserId)) {
+  const isAdmin = isAdminDemoAccount(effectiveUserId);
+  if (!isAdmin && !hasCompletedOnboarding(effectiveUserId)) {
     return <OnboardingScreen userId={effectiveUserId} onDone={() => window.dispatchEvent(new Event("scalashop-onboarded"))} />;
   }
 
   const isActive = (to: string) => to === "/" ? path === "/" : path.startsWith(to);
 
   const locked = isLockedPath(path);
-  const businessName = getBusinessName(effectiveUserId);
-  const trialExpired = isTrialExpired(effectiveUserId);
-  const isAdmin = isAdminDemoAccount(effectiveUserId);
+  const businessName = getBusinessName(effectiveUserId) || (isAdmin ? "Demo ScalaShop" : "");
+  const trialExpired = !isAdmin && isTrialExpired(effectiveUserId);
 
   const onLogout = async () => {
     if (!confirm("Vuoi davvero uscire?")) return;
