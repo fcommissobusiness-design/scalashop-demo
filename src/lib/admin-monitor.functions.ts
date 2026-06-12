@@ -25,6 +25,19 @@ export type DemoUserRow = {
   onboarding: Record<string, any> | null;
 };
 
+export const getAdminStatus = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await context.supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", context.userId)
+      .eq("role", "admin")
+      .maybeSingle();
+    if (error) throw error;
+    return { isAdmin: data?.role === "admin" };
+  });
+
 export const getDemoUsers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
