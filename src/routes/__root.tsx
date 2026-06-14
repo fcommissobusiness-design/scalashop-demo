@@ -72,15 +72,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "ScalaShop — Gestionale food retail artigianale" },
-      { name: "description", content: "Gestisci ordini, clienti, cassa, consegne, prodotti e magazzino in un unico posto. Demo gratuita 14 giorni." },
+      { title: "ScalaShop - Gestionale per Attivita' Retail" },
+      { name: "description", content: "Gestisci ordini, clienti e prodotti per un negozio di alimentari artigianali." },
       { name: "author", content: "ScalaShop" },
-      { property: "og:title", content: "ScalaShop — Gestionale food retail artigianale" },
-      { property: "og:description", content: "Gestisci ordini, clienti, cassa, consegne, prodotti e magazzino in un unico posto." },
+      { property: "og:title", content: "ScalaShop - Gestionale per Attivita' Retail" },
+      { property: "og:description", content: "Gestisci ordini, clienti e prodotti per un negozio di alimentari artigianali." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:title", content: "ScalaShop" },
-      { name: "twitter:description", content: "Gestionale semplice per food retail artigianale." },
+      { name: "twitter:title", content: "ScalaShop - Gestionale per Attivita' Retail" },
+      { name: "twitter:description", content: "Gestisci ordini, clienti e prodotti per un negozio di alimentari artigianali." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/929c099d-2b21-47bf-ac31-34b6aaceefc4/id-preview-c4f2b918--3dab3e45-ebc8-4d12-8647-0552d1a5b0f0.lovable.app-1781462490535.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/929c099d-2b21-47bf-ac31-34b6aaceefc4/id-preview-c4f2b918--3dab3e45-ebc8-4d12-8647-0552d1a5b0f0.lovable.app-1781462490535.png" },
     ],
     links: [
       {
