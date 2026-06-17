@@ -1,7 +1,7 @@
 /* Demo helpers: locked routes, trial countdown, business name. */
 
 export const LOCKED_PATHS = new Set<string>([
-  "/offerte", "/b2b", "/entrate-merci", "/fornitori",
+  "/offerte", "/b2b", "/entrate-merci", "/fornitori", "/previsioni-giornaliere",
   "/produzione", "/food-safety", "/ecommerce",
   "/fatture", "/pagamenti", "/finanza", "/fiscale",
   "/report", "/cestino",

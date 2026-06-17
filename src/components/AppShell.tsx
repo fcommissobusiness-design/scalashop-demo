@@ -26,6 +26,7 @@ const NAV_GROUPS: NavGroup[] = [
   ]},
   { label: "Magazzino e Prodotti", items: [
     { to: "/magazzino", label: "Magazzino", short: "Magazzino" },
+    { to: "/previsioni-giornaliere", label: "Previsioni giornaliere", short: "Previsioni", locked: true },
     { to: "/prodotti", label: "Prodotti", short: "Prodotti" },
     { to: "/entrate-merci", label: "Scarico Prodotti", short: "Scarico", locked: true },
     { to: "/fornitori", label: "Fornitori", short: "Fornitori", locked: true },
