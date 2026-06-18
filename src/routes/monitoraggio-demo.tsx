@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { TopBar } from "@/components/AppShell";
-import { getAdminStatus, getDemoUsers, deleteDemoUser, type DemoUserRow } from "@/lib/admin-monitor.functions";
+import { getAdminStatus, getDemoUsers, deleteDemoUser, resetDemoUserPassword, type DemoUserRow } from "@/lib/admin-monitor.functions";
 
 export const Route = createFileRoute("/monitoraggio-demo")({
   component: MonitoraggioDemoPage,
@@ -54,6 +54,7 @@ function MonitoraggioDemoPage() {
   const fetchAdminStatus = useServerFn(getAdminStatus);
   const fetchUsers = useServerFn(getDemoUsers);
   const removeDemoUser = useServerFn(deleteDemoUser);
+  const resetPwd = useServerFn(resetDemoUserPassword);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -116,6 +117,19 @@ function MonitoraggioDemoPage() {
     setSelected(new Set());
     if (errs.length) alert("Errori:\n" + errs.join("\n"));
     await load();
+  };
+
+  const handleResetPwd = async (u: DemoUserRow) => {
+    if (!confirm(`Reimpostare la password di ${u.email ?? "questo utente"}?\nVerrà generata una nuova password temporanea da comunicare all'utente.`)) return;
+    try {
+      const out: any = await resetPwd({ data: { userId: u.userId } });
+      window.prompt(
+        `Nuova password per ${out.email ?? u.email ?? "utente"}\n(copia e comunica all'utente — non sarà più visibile):`,
+        out.password
+      );
+    } catch (e: any) {
+      alert("Errore reset password: " + (e?.message ?? "sconosciuto"));
+    }
   };
 
   const filtered = useMemo(() => {
@@ -288,6 +302,12 @@ function MonitoraggioDemoPage() {
                 className="mt-3 text-xs text-brand-gold font-semibold underline underline-offset-2">
                 {open ? "Nascondi configurazione" : "Mostra configurazione iniziale"}
               </button>
+              {!isDeleted && (
+                <button onClick={() => handleResetPwd(u)}
+                  className="mt-3 ml-3 text-xs text-danger font-semibold underline underline-offset-2">
+                  Reimposta password
+                </button>
+              )}
               {open && (
                 <div className="mt-2 bg-brand-cream rounded-lg p-2 text-[11px] text-brand-green">
                   {u.onboarding ? (

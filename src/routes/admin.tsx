@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState, useRef, useEffect } from "react";
-import { useStore, getPin, setPin } from "@/lib/store";
+import { useStore } from "@/lib/store";
 import { TopBar, Sheet, Field } from "@/components/AppShell";
 import {
   exportClients, exportOrders, exportProducts, exportDeliveries,
@@ -25,7 +25,6 @@ function AdminPage() {
     goodsReceipts,
     importJson, reset, storageInfo,
   } = store;
-  const [openPin, setOpenPin] = useState(false);
   const [openImport, setOpenImport] = useState(false);
   const [openReset, setOpenReset] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
@@ -81,8 +80,6 @@ function AdminPage() {
         <section>
           <h2 className="font-display text-lg text-brand-green mb-3">Manutenzione</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <ActionCard title="Cambia PIN" desc="Modifica il codice di accesso a 4 cifre."
-              cta="Cambia PIN" onClick={() => setOpenPin(true)} />
             <ActionCard title="Esporta backup JSON" desc="Scarica una copia completa di tutti i dati."
               cta="Esporta" onClick={doExport} />
             <ActionCard title="Importa backup JSON" desc="Sostituisce i dati attuali con quelli del file."
@@ -179,8 +176,6 @@ function AdminPage() {
         </p>
       </div>
 
-      {openPin && <PinChangeSheet onClose={() => setOpenPin(false)} onDone={() => { setOpenPin(false); setMsg("PIN aggiornato."); setTimeout(() => setMsg(null), 2000); }} />}
-
       {openImport && (
         <Sheet open={true} onClose={() => setOpenImport(false)} title="Importa backup JSON">
           <p className="text-sm">Seleziona un file di backup. Tutti i dati attuali verranno <strong className="text-danger">sostituiti</strong>.</p>
@@ -208,41 +203,6 @@ function AdminPage() {
         </Sheet>
       )}
     </div>
-  );
-}
-
-function PinChangeSheet({ onClose, onDone }: { onClose: () => void; onDone: () => void }) {
-  const [oldPin, setOldPin] = useState("");
-  const [newPin, setNewPin] = useState("");
-  const [confirm, setConfirm] = useState("");
-  const [err, setErr] = useState<string | null>(null);
-
-  const submit = () => {
-    setErr(null);
-    if (oldPin !== getPin()) return setErr("PIN attuale errato");
-    if (!/^\d{4}$/.test(newPin)) return setErr("Il nuovo PIN deve essere di 4 cifre");
-    if (newPin !== confirm) return setErr("Conferma non corrispondente");
-    try { setPin(newPin); onDone(); } catch (e: any) { setErr(e.message); }
-  };
-
-  return (
-    <Sheet open={true} onClose={onClose} title="Cambia PIN"
-      footer={<button onClick={submit} className="w-full bg-brand-gold text-white rounded-xl py-3 font-semibold">Conferma nuovo PIN</button>}
-    >
-      <Field label="PIN attuale">
-        <input type="password" inputMode="numeric" maxLength={4} value={oldPin} onChange={(e) => setOldPin(e.target.value)}
-          className="w-full bg-card border border-border rounded-lg p-3 text-center text-xl tracking-widest" />
-      </Field>
-      <Field label="Nuovo PIN (4 cifre)">
-        <input type="password" inputMode="numeric" maxLength={4} value={newPin} onChange={(e) => setNewPin(e.target.value)}
-          className="w-full bg-card border border-border rounded-lg p-3 text-center text-xl tracking-widest" />
-      </Field>
-      <Field label="Conferma nuovo PIN">
-        <input type="password" inputMode="numeric" maxLength={4} value={confirm} onChange={(e) => setConfirm(e.target.value)}
-          className="w-full bg-card border border-border rounded-lg p-3 text-center text-xl tracking-widest" />
-      </Field>
-      {err && <p className="text-sm text-danger">{err}</p>}
-    </Sheet>
   );
 }
 

@@ -219,3 +219,28 @@ export const deleteDemoUser = createServerFn({ method: "POST" })
     if (delErr) throw delErr;
     return { ok: true };
   });
+
+export const resetDemoUserPassword = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { userId: string; newPassword?: string }) => {
+    if (!input?.userId || typeof input.userId !== "string") throw new Error("userId richiesto");
+    return input;
+  })
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as any);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    // Genera password leggibile se non fornita
+    const pwd = (data.newPassword && data.newPassword.length >= 8)
+      ? data.newPassword
+      : generatePassword();
+    const { data: u, error } = await supabaseAdmin.auth.admin.updateUserById(data.userId, { password: pwd });
+    if (error) throw error;
+    return { ok: true, email: u?.user?.email ?? null, password: pwd };
+  });
+
+function generatePassword(): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
+  let s = "";
+  for (let i = 0; i < 10; i++) s += chars[Math.floor(Math.random() * chars.length)];
+  return s + "!";
+}
