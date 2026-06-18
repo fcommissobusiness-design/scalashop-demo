@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState, useRef, useEffect } from "react";
-import { useStore, getPin, setPin } from "@/lib/store";
-import { TopBar, Sheet, Field } from "@/components/AppShell";
+import { useStore } from "@/lib/store";
+import { TopBar, Sheet } from "@/components/AppShell";
 import {
   exportClients, exportOrders, exportProducts, exportDeliveries,
   exportSuppliers, exportCashEntries, exportProductions, exportStock, exportPayments,
@@ -25,7 +25,6 @@ function AdminPage() {
     goodsReceipts,
     importJson, reset, storageInfo,
   } = store;
-  const [openPin, setOpenPin] = useState(false);
   const [openImport, setOpenImport] = useState(false);
   const [openReset, setOpenReset] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
@@ -81,8 +80,6 @@ function AdminPage() {
         <section>
           <h2 className="font-display text-lg text-brand-green mb-3">Manutenzione</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <ActionCard title="Cambia PIN" desc="Modifica il codice di accesso a 4 cifre."
-              cta="Cambia PIN" onClick={() => setOpenPin(true)} />
             <ActionCard title="Esporta backup JSON" desc="Scarica una copia completa di tutti i dati."
               cta="Esporta" onClick={doExport} />
             <ActionCard title="Importa backup JSON" desc="Sostituisce i dati attuali con quelli del file."
@@ -178,8 +175,6 @@ function AdminPage() {
           Non sostituisce un commercialista.
         </p>
       </div>
-
-      {openPin && <PinChangeSheet onClose={() => setOpenPin(false)} onDone={() => { setOpenPin(false); setMsg("PIN aggiornato."); setTimeout(() => setMsg(null), 2000); }} />}
 
       {openImport && (
         <Sheet open={true} onClose={() => setOpenImport(false)} title="Importa backup JSON">
