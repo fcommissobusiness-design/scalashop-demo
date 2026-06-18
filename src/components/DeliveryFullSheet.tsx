@@ -164,10 +164,23 @@ export function DeliveryFullSheet({ mode, deliveryId, onClose }: {
 
 
   const handlePrint = () => {
-    if (!existing) return;
-    const c = clients.find(x => x.id === existing.clientId);
-    printComanda(buildDeliveryComanda(existing, c, linkedOrder ?? null, products, bundles));
     setMenuOpen(false);
+    if (existing) {
+      const c = clients.find(x => x.id === existing.clientId);
+      printComanda(buildDeliveryComanda(existing, c, linkedOrder ?? null, products, bundles));
+      return;
+    }
+    // Nuovo: prima salva (conferma), poi stampa.
+    if (!address.trim() || items.length === 0 || (!clientId && !((clientQ ?? "").trim()))) return;
+    save();
+    printComanda({
+      kind: "delivery",
+      title: "COMANDA · CONSEGNA",
+      dateLabel: new Date(date).toLocaleString("it-IT"),
+      client: { name: (clientQ ?? selectedClient?.name ?? "").trim() || undefined, phone: phone.trim() || undefined, address: address.trim() },
+      items: items.map((i) => ({ name: "", qty: i.qty })),
+      total,
+    });
   };
   const handleDelete = () => {
     if (!existing) return;
@@ -183,10 +196,9 @@ export function DeliveryFullSheet({ mode, deliveryId, onClose }: {
             <p className="text-[10px] uppercase text-muted-foreground">Totale</p>
             <p className="font-display text-2xl text-brand-green leading-none">{formatEuro(total)}</p>
           </div>
-          {mode === "edit" && (
-            <button onClick={handlePrint}
-              className="bg-card border border-border rounded-xl px-3 py-3 text-sm font-semibold">🖨️ Stampa Comanda</button>
-          )}
+          <button onClick={handlePrint}
+            disabled={!address.trim() || items.length === 0 || (!clientId && !((clientQ ?? "").trim()))}
+            className="bg-card border border-border rounded-xl px-3 py-3 text-sm font-semibold disabled:opacity-40">🖨️ Stampa Comanda</button>
           {mode === "edit" && (
             <button onClick={handleDelete} className="text-danger border border-danger/40 rounded-xl px-3 py-3 text-sm font-semibold">Elimina</button>
           )}

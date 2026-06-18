@@ -315,7 +315,8 @@ export function OrderSheet({ mode, orderId, onClose, onSave }: {
     if (!existing) return null;
     return clients.some((c) => c.id === existing.clientId) ? null : (existing.clientNameInput ?? "");
   });
-  const [clientId, setClientId] = useState(existing?.clientId ?? clients[0]?.id ?? "");
+  // Per richiesta esplicita: in "nuovo" il campo cliente deve essere vuoto.
+  const [clientId, setClientId] = useState(existing?.clientId ?? "");
   const [label, setLabel] = useState(existing?.label ?? "");
   const [items, setItems] = useState<OrderItem[]>(existing?.items ?? []);
   const [date, setDate] = useState(() => {
@@ -449,10 +450,23 @@ export function OrderSheet({ mode, orderId, onClose, onSave }: {
 
 
   const handlePrintComanda = () => {
-    if (!existing) return;
-    const c = clients.find(x => x.id === existing.clientId);
-    printComanda(buildOrderComanda(existing, c, products, bundles));
     setMenuOpen(false);
+    if (existing) {
+      const c = clients.find(x => x.id === existing.clientId);
+      printComanda(buildOrderComanda(existing, c, products, bundles));
+      return;
+    }
+    // Nuovo: prima salva (conferma), poi stampa.
+    if (items.length === 0 || (!clientId && !((clientQ ?? "").trim()))) return;
+    handleSave();
+    printComanda({
+      kind: "order",
+      title: "COMANDA · ORDINE",
+      dateLabel: new Date(date).toLocaleString("it-IT"),
+      client: { name: (clientQ ?? selectedClient?.name ?? "").trim() || undefined, phone: phone.trim() || undefined, address: delivery === "domicilio" ? address.trim() : undefined },
+      items: items.map((i) => ({ name: "", qty: i.qty })),
+      total,
+    });
   };
 
 
@@ -480,10 +494,9 @@ export function OrderSheet({ mode, orderId, onClose, onSave }: {
             <p className="text-[10px] uppercase text-muted-foreground">Totale · margine</p>
             <p className="font-display text-2xl text-brand-green leading-none">{formatEuro(total)} <span className="text-sm text-muted-foreground">· {formatEuro(margin)}</span></p>
           </div>
-          {mode === "edit" && (
-            <button onClick={handlePrintComanda}
-              className="bg-card border border-border rounded-xl px-3 py-3 text-sm font-semibold">🖨️ Stampa Comanda</button>
-          )}
+          <button onClick={handlePrintComanda}
+            disabled={items.length === 0 || (!clientId && !((clientQ ?? "").trim()))}
+            className="bg-card border border-border rounded-xl px-3 py-3 text-sm font-semibold disabled:opacity-40">🖨️ Stampa Comanda</button>
           {mode === "edit" && (
             <button onClick={handleDelete} className="text-danger border border-danger/40 rounded-xl px-3 py-3 text-sm font-semibold">Elimina</button>
           )}
