@@ -496,6 +496,7 @@ export function NewSaleSheet({ open, saleId, onClose, onSave }: {
 
   const printPreview = () => {
     if (items.length === 0) return;
+    // Stampa Comanda = Conferma + Stampa: prima salva, poi stampa.
     const fakeSale = {
       id: existing?.id ?? "PREVIEW",
       date: new Date(date).toISOString(),
@@ -506,6 +507,7 @@ export function NewSaleSheet({ open, saleId, onClose, onSave }: {
       source, delivery, paymentMethod,
       hasInvoice, invoice: hasInvoice ? invoice : undefined,
     } as CasualSale;
+    save();
     printComanda(buildSaleComanda(fakeSale, matched, products, bundles));
     setMenuOpen(false);
   };
