@@ -257,13 +257,6 @@ function CartRow({
 function PriceInput({ value, onChange }: { value: number; onChange: (n: number) => void }) {
   const fmt = (n: number) => (Math.round(n * 100) / 100).toString().replace(".", ",");
   const [text, setText] = useState<string>(value > 0 ? fmt(value) : "");
-  // Sync from outside when value changes (e.g. linked product price update)
-  // Avoid re-formatting while user is typing by checking parsed equivalence
-  const parsed = parseFloat(text.replace(",", "."));
-  if (!isNaN(parsed) && Math.abs(parsed - value) > 0.0001) {
-    // external change: re-sync
-    // Note: setState in render guarded by condition is acceptable here (idempotent)
-  }
   return (
     <input
       type="text"
