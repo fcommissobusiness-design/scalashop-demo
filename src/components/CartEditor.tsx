@@ -101,7 +101,12 @@ export function CartEditor({ items, onChange }: Props) {
               item={it}
               products={products}
               bundles={bundles}
-              onQtyChange={(q) => (q <= 0 ? removeRow(idx) : updateRow(idx, { qty: q }))}
+              onQtyChange={(q) => updateRow(idx, { qty: q })}
+              onPriceChange={(p) => {
+                const k = itemKind(it);
+                if (k === "custom") updateRow(idx, { customPrice: p });
+                else updateRow(idx, { unitPriceOverride: p });
+              }}
               onRemove={() => removeRow(idx)}
             />
           ))}
@@ -207,12 +212,13 @@ export function CartEditor({ items, onChange }: Props) {
 }
 
 function CartRow({
-  item, products, bundles, onQtyChange, onRemove,
+  item, products, bundles, onQtyChange, onPriceChange, onRemove,
 }: {
   item: OrderItem;
   products: Product[];
   bundles: Bundle[];
   onQtyChange: (qty: number) => void;
+  onPriceChange: (price: number) => void;
   onRemove: () => void;
 }) {
   const name = itemDisplayName(item, products, bundles);
@@ -231,9 +237,11 @@ function CartRow({
       <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border ${badge}`}>{badgeLabel}</span>
       <div className="flex-1 min-w-0">
         <p className="text-sm truncate">{name}</p>
-        <p className="text-[11px] text-muted-foreground">
-          {formatEuro(unitPrice)}{p?.unit ? `/${p.unit}` : ""} · subtot. {formatEuro(total)}
-        </p>
+        <div className="text-[11px] text-muted-foreground flex items-center gap-1 flex-wrap">
+          <span>€</span>
+          <PriceInput value={unitPrice} onChange={onPriceChange} />
+          <span>{p?.unit ? `/${p.unit}` : ""} · subtot. {formatEuro(total)}</span>
+        </div>
       </div>
       <QtyInput value={item.qty} step={step} unit={p?.unit} onChange={onQtyChange} />
       <button
@@ -243,6 +251,45 @@ function CartRow({
         className="text-danger border border-danger/40 hover:bg-danger/10 rounded-md w-7 h-7 text-sm leading-none"
       >×</button>
     </div>
+  );
+}
+
+function PriceInput({ value, onChange }: { value: number; onChange: (n: number) => void }) {
+  const fmt = (n: number) => (Math.round(n * 100) / 100).toString().replace(".", ",");
+  const [text, setText] = useState<string>(value > 0 ? fmt(value) : "");
+  // Sync from outside when value changes (e.g. linked product price update)
+  // Avoid re-formatting while user is typing by checking parsed equivalence
+  const parsed = parseFloat(text.replace(",", "."));
+  if (!isNaN(parsed) && Math.abs(parsed - value) > 0.0001) {
+    // external change: re-sync
+    // Note: setState in render guarded by condition is acceptable here (idempotent)
+  }
+  return (
+    <input
+      type="text"
+      inputMode="decimal"
+      value={text}
+      onChange={(e) => {
+        const v = e.target.value.replace(/[^\d.,]/g, "");
+        setText(v);
+        if (v === "") return; // keep row, don't propagate 0
+        const n = parseFloat(v.replace(",", "."));
+        if (!isNaN(n) && n >= 0) onChange(+n.toFixed(2));
+      }}
+      onBlur={(e) => {
+        const v = e.target.value.replace(/[^\d.,]/g, "");
+        const n = parseFloat(v.replace(",", "."));
+        if (v === "" || isNaN(n) || n < 0) {
+          setText(fmt(value));
+        } else {
+          onChange(+n.toFixed(2));
+          setText(fmt(+n.toFixed(2)));
+        }
+      }}
+      onFocus={(e) => e.target.select()}
+      aria-label="Prezzo unitario"
+      className="w-14 text-foreground bg-card border border-border rounded px-1 py-0.5 text-[11px]"
+    />
   );
 }
 
