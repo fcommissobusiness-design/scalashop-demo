@@ -206,41 +206,6 @@ function AdminPage() {
   );
 }
 
-function PinChangeSheet({ onClose, onDone }: { onClose: () => void; onDone: () => void }) {
-  const [oldPin, setOldPin] = useState("");
-  const [newPin, setNewPin] = useState("");
-  const [confirm, setConfirm] = useState("");
-  const [err, setErr] = useState<string | null>(null);
-
-  const submit = () => {
-    setErr(null);
-    if (oldPin !== getPin()) return setErr("PIN attuale errato");
-    if (!/^\d{4}$/.test(newPin)) return setErr("Il nuovo PIN deve essere di 4 cifre");
-    if (newPin !== confirm) return setErr("Conferma non corrispondente");
-    try { setPin(newPin); onDone(); } catch (e: any) { setErr(e.message); }
-  };
-
-  return (
-    <Sheet open={true} onClose={onClose} title="Cambia PIN"
-      footer={<button onClick={submit} className="w-full bg-brand-gold text-white rounded-xl py-3 font-semibold">Conferma nuovo PIN</button>}
-    >
-      <Field label="PIN attuale">
-        <input type="password" inputMode="numeric" maxLength={4} value={oldPin} onChange={(e) => setOldPin(e.target.value)}
-          className="w-full bg-card border border-border rounded-lg p-3 text-center text-xl tracking-widest" />
-      </Field>
-      <Field label="Nuovo PIN (4 cifre)">
-        <input type="password" inputMode="numeric" maxLength={4} value={newPin} onChange={(e) => setNewPin(e.target.value)}
-          className="w-full bg-card border border-border rounded-lg p-3 text-center text-xl tracking-widest" />
-      </Field>
-      <Field label="Conferma nuovo PIN">
-        <input type="password" inputMode="numeric" maxLength={4} value={confirm} onChange={(e) => setConfirm(e.target.value)}
-          className="w-full bg-card border border-border rounded-lg p-3 text-center text-xl tracking-widest" />
-      </Field>
-      {err && <p className="text-sm text-danger">{err}</p>}
-    </Sheet>
-  );
-}
-
 function ActionCard({ title, desc, cta, onClick, danger }: { title: string; desc: string; cta: string; onClick: () => void; danger?: boolean }) {
   return (
     <div className="bg-card rounded-xl p-4 flex flex-col">
