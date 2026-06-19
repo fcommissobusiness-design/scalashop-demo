@@ -149,6 +149,7 @@ function NewProductSheet({ initialName, onClose, onSave }: {
   const [name, setName] = useState(initialName);
   const [cost, setCost] = useState("");
   const [price, setPrice] = useState("");
+  const [unit, setUnit] = useState<"pz" | "kg">("pz");
   const c = cost === "" ? null : parseFloat(cost);
   const pr = parseFloat(price) || 0;
   const margin = c !== null && pr > 0 ? ((pr - c) / pr) * 100 : null;
@@ -160,7 +161,7 @@ function NewProductSheet({ initialName, onClose, onSave }: {
       category: "Dispensa",
       cost: c,
       price: pr,
-      unit: "pz",
+      unit,
       active: true,
     } as Omit<Product, "id">);
   };
@@ -184,17 +185,29 @@ function NewProductSheet({ initialName, onClose, onSave }: {
         <input value={name} onChange={(e) => setName(e.target.value)} autoFocus
           className="w-full bg-card border border-border rounded-lg p-3" />
       </Field>
+      <Field label="Unità di vendita">
+        <div className="grid grid-cols-2 gap-2">
+          <button type="button" onClick={() => setUnit("pz")}
+            className={`rounded-lg p-3 text-sm font-semibold border-2 transition ${unit === "pz" ? "bg-brand-green text-brand-cream border-brand-green" : "bg-card text-foreground/70 border-border hover:border-brand-gold/40"}`}>
+            Al pezzo
+          </button>
+          <button type="button" onClick={() => setUnit("kg")}
+            className={`rounded-lg p-3 text-sm font-semibold border-2 transition ${unit === "kg" ? "bg-brand-green text-brand-cream border-brand-green" : "bg-card text-foreground/70 border-border hover:border-brand-gold/40"}`}>
+            Al chilo
+          </button>
+        </div>
+      </Field>
       <div className="grid grid-cols-2 gap-3">
         <Field label="Costo (€)">
           <input type="number" step="0.01" value={cost} onChange={(e) => setCost(e.target.value)}
             className="w-full bg-card border border-border rounded-lg p-3" />
         </Field>
-        <Field label="Prezzo (€)">
+        <Field label={`Prezzo (€ / ${unit})`}>
           <input type="number" step="0.01" value={price} onChange={(e) => setPrice(e.target.value)}
             className="w-full bg-card border border-border rounded-lg p-3" />
         </Field>
       </div>
-      <p className="text-xs text-muted-foreground">Per categoria, unità, certificazioni e magazzino, modifica il prodotto dopo la creazione.</p>
+      <p className="text-xs text-muted-foreground">Per categoria, certificazioni e fornitore, modifica il prodotto dopo la creazione (funzionalità premium).</p>
     </Sheet>
   );
 }
@@ -271,21 +284,6 @@ function ProductSheet({ product, onClose, onSave, onDelete }: {
         <Field label="Nome">
           <input value={name} onChange={(e) => setName(e.target.value)} className="w-full bg-card border border-border rounded-lg p-3" />
         </Field>
-        <Field label="Categoria">
-          <select value={category} onChange={(e) => setCategory(e.target.value as ProductCategory)} className="w-full bg-card border border-border rounded-lg p-3">
-            {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-          </select>
-        </Field>
-        <Field label="Certificazione">
-          <select value={badge} onChange={(e) => setBadge(e.target.value)} className="w-full bg-card border border-border rounded-lg p-3">
-            <option value="">— Nessuna —</option>
-            <option value="DOP">DOP</option>
-            <option value="IGP">IGP</option>
-            <option value="DOC">DOC</option>
-            <option value="DOCG">DOCG</option>
-            <option value="BIO">BIO</option>
-          </select>
-        </Field>
         <Field label="Unità">
           <select value={unit} onChange={(e) => setUnit(e.target.value as any)} className="w-full bg-card border border-border rounded-lg p-3">
             <option value="kg">kg</option>
@@ -306,14 +304,6 @@ function ProductSheet({ product, onClose, onSave, onDelete }: {
           {active ? "Attivo" : "Non attivo"}
         </button>
       </div>
-
-      <Field label="Fornitore">
-        <select value={supplierId} onChange={(e) => setSupplierId(e.target.value)}
-          className="w-full bg-card border border-border rounded-lg p-3">
-          <option value="">— Nessuno —</option>
-          {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-        </select>
-      </Field>
 
       <Field label="Note">
         <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} className="w-full bg-card border border-border rounded-lg p-3 text-sm" />
@@ -336,12 +326,32 @@ function ProductSheet({ product, onClose, onSave, onDelete }: {
       <div className="pt-2">
         <PremiumBanner
           title="Funzionalità disponibile nel piano a pagamento"
-          text="Per gestire Magazzino, Lotti, Scadenze e Fornitori attiva il piano a pagamento."
+          text="Per gestire Categoria, Certificazione, Fornitore, Magazzino, Lotti e Scadenze attiva il piano a pagamento."
         />
         <div className="mt-3 grid grid-cols-2 gap-3 opacity-50 pointer-events-none select-none">
+          <Field label="Categoria">
+            <select disabled value={category} className="w-full bg-card border border-border rounded-lg p-3">
+              {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </Field>
+          <Field label="Certificazione">
+            <select disabled value={badge} className="w-full bg-card border border-border rounded-lg p-3">
+              <option value="">— Nessuna —</option>
+              <option value="DOP">DOP</option>
+              <option value="IGP">IGP</option>
+              <option value="DOC">DOC</option>
+              <option value="DOCG">DOCG</option>
+              <option value="BIO">BIO</option>
+            </select>
+          </Field>
+          <Field label="Fornitore">
+            <select disabled value={supplierId} className="w-full bg-card border border-border rounded-lg p-3">
+              <option value="">— Nessuno —</option>
+              {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </select>
+          </Field>
           <Field label="Lotto"><input disabled placeholder="LOT-2026-001" className="w-full bg-card border border-border rounded-lg p-3" /></Field>
           <Field label="Data scadenza"><input disabled type="date" className="w-full bg-card border border-border rounded-lg p-3" /></Field>
-          <Field label="Fornitore"><input disabled placeholder="—" className="w-full bg-card border border-border rounded-lg p-3" /></Field>
           <Field label="Quantità disponibile"><input disabled placeholder="0" className="w-full bg-card border border-border rounded-lg p-3" /></Field>
           <Field label="Carichi"><input disabled placeholder="—" className="w-full bg-card border border-border rounded-lg p-3" /></Field>
           <Field label="Scarichi"><input disabled placeholder="—" className="w-full bg-card border border-border rounded-lg p-3" /></Field>

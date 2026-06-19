@@ -1,68 +1,65 @@
-# Piano ScalaShop Demo — 27 punti
+# ScalaShop Demo — Stress test fixes
 
-Lavoro principalmente per **sottrazione e standardizzazione**, riusando store/componenti esistenti. Stimo ~15 file toccati, nessuna migration backend.
+Lavoro in un'unica passata, riusando i componenti esistenti. Per ogni punto indico file/azione.
 
-## Fase 1 — Infrastruttura demo (file nuovi/condivisi)
+## A. Sincronizzazione multi-device (PRIORITÀ 1) — punti 1, 2, 25
 
-1. **`src/lib/demo-flags.ts`** (nuovo): elenco rotte bloccate, helper `isLocked(path)`, helper `getTrialDaysLeft(userId)` (legge `completedAt` da onboarding, 14gg), helper `getBusinessName(userId)`.
-2. **`src/components/LockedSection.tsx`** (nuovo): pagina-blocco con sfondo blur + banner centrale "Per sbloccare anche questa funzionalità, attiva il piano Starter di ScalaShop." + CTA `button` (no link).
-3. **`src/components/PromoMarquee.tsx`** (nuovo): barra gialla scorrevole con le 5 frasi richieste. CSS keyframes (no libreria).
-4. **`src/components/DemoGate.tsx`** (nuovo): wrapper usato in `__root.tsx` che, per le rotte in lockedRoutes, sostituisce il contenuto con `LockedSection`.
+Oggi `store.ts` salva tutto in `localStorage` per dispositivo; `cloudSync.ts` esiste ma evidentemente non copre tutto.
 
-## Fase 2 — Onboarding & import (punti 1, 2)
+- Verifico/riscrivo `src/lib/cloudSync.ts` perché lo store completo (prodotti, clienti, ordini, consegne, scontrini, config, trial) venga salvato su `public.user_state` (jsonb già presente) per `auth.uid()` e ricaricato al login su ogni device.
+- Al boot, prima di renderizzare AppShell: fetch da `user_state`, hydrate dello store, poi listener realtime per push/pull (debounced).
+- **Trial**: il `trialStartMs` viene letto dal record cloud; se mancante lo creo lato server al primo accesso. Mai più "reset 14 giorni" su nuovo device.
 
-5. **`src/lib/demo-parsers.ts`**: estendere per XLSX (`xlsx` se già in deps, altrimenti `sheetjs`) e immagini (OCR via `tesseract.js`? — **troppo pesante**, fallback: per JPG/PNG mostriamo solo upload + invito a incollare testo; per PDF già ok). **Decisione pragmatica:** XLSX sì (libreria leggera), immagini accettate ma con messaggio "Riconoscimento immagini in arrivo — incolla il testo qui sotto". Questo evita 5MB di tesseract.
-6. **Bug import testuale prodotti**: il parser attuale richiede regex `\d+[.,]\d{1,2}` (es. "15,00"). Il formato "15€/kg" senza decimali fallisce. Correggere regex per accettare `\d+(?:[.,]\d{1,2})?` ed estrarre unit anche con `/kg`.
-7. **`OnboardingScreen.tsx`**: aggiungere drag&drop su entrambi i textarea (handler `onDragOver`/`onDrop`), aggiornare `accept` con xlsx/jpg/png, parser routing per estensione.
-8. **Persistenza import**: verificare che `addClient`/`addProduct` dello store persistano (cloudSync). Già ok.
+## B. UI mobile (punti 3, 4, 10, 21, 23)
 
-## Fase 3 — Sidebar & rotte bloccate (punti 3, 4, 5, 19, 24)
+- **3** Banner "Demo gratuita" in `AppShell.tsx`: ridurre `bottom` su mobile sopra l'area del titolo Dashboard.
+- **4** Pulsante "Richiedi assistenza" (`QuickActions.tsx`/`WhatsAppDialog.tsx`): spostare in basso a sinistra su mobile (md: resta dove è).
+- **10** Indicatore "Salvato": nasconderlo su mobile (`hidden md:flex`).
+- **21** Sidebar mobile: voce "Magazzino" deve apparire grigia+lucchetto come le altre bloccate (in `AppShell.tsx`).
+- **23** Pannello di controllo mobile: rimuovere "Cambia PIN" residuo.
 
-9. **`AppShell.tsx`**: riscrivere la sidebar con la struttura a 4 gruppi richiesta (OPERATIVO / MAGAZZINO E PRODOTTI / VENDITE ONLINE / FINANZA E AMMINISTRAZIONE), incluse voci bloccate con icona lucchetto. Aggiungere voce **Pagamenti** (route nuova). Voce "Amministrazione" → "Pannello di Controllo" (già fatto, verificare).
-10. **Rotte bloccate**: in ogni route file della lista bloccati, sostituire il body con `<LockedSection />`. Più semplice: gate nel route component invece di toccare 13 file uno per uno → fare in `__root.tsx` via `DemoGate`.
-11. **Mobile bottom-nav**: aggiornare le 6 voci principali se serve (Dashboard, Ordini, Scontrini, Consegne, Cassa, Più).
+## C. Messaggio assistenza (punto 5)
 
-## Fase 4 — Dashboard (punti 6, 7, 8, 22)
+In `wa.ts`/`WhatsAppDialog.tsx`: per "Richiedi assistenza" usare numero `393883810008` e testo `"Ciao, ho bisogno di assistenza per la demo di ScalaShop"`. La CTA "prova gratuita" rimane separata.
 
-12. **`routes/index.tsx`**:
-    - Riscrivere banner trial: testo dinamico "Stai provando ScalaShop. Ti restano X giorni…" con sfondo `bg-brand-gold` o `bg-brand-green` per visibilità.
-    - Aggiungere bordo `border-brand-green/30` ai box Ritiri/Scontrini/Consegne (anche stato vuoto).
-    - Rimuovere "Nuovo Pagamento" dai quick-action.
-13. **Promo marquee**: inserire `<PromoMarquee />` in `__root.tsx` (compare ovunque automaticamente).
+## D. Dashboard (punti 6, 7, 16, 18, 19)
 
-## Fase 5 — Branding nome attività (punto 23)
+In `src/routes/index.tsx`:
+- **6** Aggiungere link "Vai a Scontrini" come per Ordini/Consegne.
+- **7** Menu "+" mobile: ogni voce dentro card con bordo blu coerente.
+- **16** Card Scontrini in dashboard delimitata come Ordini/Consegne.
+- **18** Limitare ordini/consegne/scontrini a 3–5 e CTA "Visualizza tutti" che porta alla scheda con timeframe corrente in query string.
+- **19** Click su scontrino in dashboard: apre la sheet completa, non focus sul pagamento (rimuovere `autoFocus`/`initialField`).
 
-14. **`AppShell.tsx`**: sotto "ScalaShop" nella sidebar mostrare `businessName` da onboarding. In header pagina (top-right) mostrare lo stesso in modo discreto.
+## E. Prodotti (punti 8, 22)
 
-## Fase 6 — Sezioni accessibili (punti 9-18, 20, 21)
+In `src/routes/prodotti.tsx`:
+- **8** In creazione prodotto aggiungere selezione unità di vendita (pezzo/kg) come in modifica.
+- **22** Spostare in sezione premium/sbiadita i campi Certificazione, Categoria, Fornitore.
 
-15. **`routes/magazzino.tsx`**: rimuovere "Nuovo Prodotto" separato, lasciare solo "Imposta Magazzino". Campo fornitore: combobox con datalist (fornitori già usati, salvataggio implicito tramite store).
-16. **`routes/prodotti.tsx`**: rimuovere filtri e panoramiche (più venduti / profittevoli / mai venduti). Pulsante "+" → naviga a `/magazzino` invece di entrate-merci.
-17. **`routes/ordini.tsx`** (nuovo ordine, no prodotti): redirect/CTA verso `/magazzino` invece di entrate-merci. Aggiungere bordo ai 4 KPI box.
-18. **`routes/clienti.tsx`**: rimuovere filtri segment.
-19. **`routes/consegne.tsx`**: filtri come pill con bordo gold quando attivi, rimuovere label "Status". Bordo ai 4 KPI box.
-20. **`routes/incassi.tsx` (Scontrini/Cassa)**: la voce sidebar "Scontrini" punta qui ma mostra "Uscite" — rinominare titolo a "Scontrini", rimuovere KPI "Da pagare/Scaduti/Saldati", sostituire con "Completati / Fatturato generato / Scontrino medio", bordo box.
+## F. Carrello ordini/scontrini/consegne (punti 9, 11, 12, 13, 14, 15)
 
-## Fase 7 — Nuova route Pagamenti (punto 19)
+In `CartEditor.tsx` e nelle 3 sheet:
+- **9** Aggiungere campo "Totale riga" editabile accanto a qty/prezzo. Editando il totale riga, calcolo `unitPriceOverride = total/qty` e lo salvo. Prezzo base resta invariato.
+- **11** Voce "Aggiungi nuovo prodotto" sempre visibile nel selector (anche con campo vuoto / con risultati).
+- **12** Mostrare max 5 prodotti suggeriti (più usati/recenti) finché non si digita; ricerca attiva all'input.
+- **13** Rimuovere metodo "Carta" da tutte le selezioni pagamento, lasciare "POS".
+- **14** Riga "Personalizzato": campi qty/prezzo come testo libero, cancellabili (no `0` bloccato).
+- **15** Già parzialmente fatto: rivedere e confermare anche per riga personalizzata.
 
-21. **`routes/pagamenti.tsx`**: già esiste, sovrascrivere body con `<LockedSection />` (gestito via DemoGate).
+## G. Nuova Consegna (punto 17)
 
-## Fase 8 — Mobile & QA (punti 26, 27)
+In `DeliveryFullSheet.tsx`: se status pagamento ∈ {"pagato_anticipo","pagato_consegna"} mostrare campo Metodo Pagamento.
 
-22. Test visivo della sidebar mobile, bottom-nav, dashboard, ordini.
-23. Verifica che cloudSync/login/onboarding non siano toccati.
+## H. Cassa/Incassi (punto 20)
 
-## Decisioni pragmatiche per limitare consumo crediti
+In `incassi.tsx`: aggiungere card "Margine" usando metriche esistenti (sum prezzo vendita − costo prodotto) sul timeframe.
 
-- **OCR immagini**: NON implemento (tesseract = 5MB+). Accetto upload JPG/PNG ma mostro messaggio "incolla il testo per ora". Riporto nel report finale.
-- **XLSX**: aggiungo `xlsx` (~400KB, ok).
-- **Gate rotte bloccate**: via `DemoGate` in `__root.tsx`, NON tocco 13 file route uno per uno.
-- **NO migration backend**.
-- **NO refactor architetturale**.
+## I. Verifica finale e report (punti 24, 26)
 
-## File toccati (stima)
+Smoke test build, screenshot mobile, e report per ogni voce.
 
-Nuovi: `demo-flags.ts`, `LockedSection.tsx`, `PromoMarquee.tsx`, `DemoGate.tsx` (4).
-Modificati: `AppShell.tsx`, `OnboardingScreen.tsx`, `demo-parsers.ts`, `__root.tsx`, `index.tsx`, `prodotti.tsx`, `clienti.tsx`, `consegne.tsx`, `ordini.tsx`, `incassi.tsx`, `magazzino.tsx`, `package.json` (per xlsx) (12).
+## Stima impatto file
+- `cloudSync.ts`, `store.ts` (sync), `AppShell.tsx`, `QuickActions.tsx`, `WhatsAppDialog.tsx`, `wa.ts`, `CartEditor.tsx`, `DeliveryFullSheet.tsx`, `routes/index.tsx`, `routes/ordini.tsx`, `routes/scontrini.tsx`, `routes/consegne.tsx`, `routes/prodotti.tsx`, `routes/incassi.tsx`, `routes/admin.tsx`, `routes/magazzino.tsx`, `demo-flags.ts`.
 
-Procedo?
+Confermi così procedo in un'unica passata?

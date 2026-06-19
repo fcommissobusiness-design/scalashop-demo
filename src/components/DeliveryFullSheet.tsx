@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useStore } from "@/lib/store";
 import { Sheet, Field, formatEuro } from "@/components/AppShell";
 import { CartEditor } from "@/components/CartEditor";
-import type { Delivery, DeliveryStatus, DeliveryPayment, OrderItem, OrderStatus, Order } from "@/lib/data";
+import type { Delivery, DeliveryStatus, DeliveryPayment, OrderItem, OrderStatus, Order, PaymentMethod } from "@/lib/data";
 import { cartTotal } from "@/lib/metrics";
 import { buildDeliveryComanda, printComanda } from "@/lib/comanda";
 
@@ -43,6 +43,9 @@ export function DeliveryFullSheet({ mode, deliveryId, onClose }: {
   const [slot, setSlot] = useState(existing?.timeSlot ?? "10:00-12:00");
   const [status, setStatus] = useState<DeliveryStatus>(existing?.status ?? "da_preparare");
   const [payment, setPayment] = useState<DeliveryPayment>(existing?.payment ?? "da_pagare");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(
+    (existing?.orderId ? orders.find(o => o.id === existing.orderId)?.paymentMethod : undefined) ?? "contanti",
+  );
   const [notes, setNotes] = useState(existing?.notes ?? "");
   const [items, setItems] = useState<OrderItem[]>(linkedOrder?.items ?? []);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -129,7 +132,7 @@ export function DeliveryFullSheet({ mode, deliveryId, onClose }: {
         pickupDate: isoDate, status: orderStatus, total,
         notes: notes.trim() || undefined, source: "negozio",
         delivery: "domicilio", address: address.trim(),
-        payment, paymentMethod: "contanti",
+        payment, paymentMethod: payment === "da_pagare" ? "contanti" : paymentMethod,
       } as Omit<Order, "id" | "createdAt">);
       // Aggiorna la Delivery con timeSlot e dati specifici
       if (order.deliveryId) {
@@ -148,7 +151,8 @@ export function DeliveryFullSheet({ mode, deliveryId, onClose }: {
           items, total,
           pickupDate: isoDate, status: orderStatus,
           delivery: "domicilio", address: address.trim(),
-          payment, notes: notes.trim() || undefined,
+          payment, paymentMethod: payment === "da_pagare" ? linkedOrder.paymentMethod : paymentMethod,
+          notes: notes.trim() || undefined,
         });
       }
       updateDelivery(existing.id, {
@@ -288,6 +292,17 @@ export function DeliveryFullSheet({ mode, deliveryId, onClose }: {
             <option value="pagato_consegna">Pagato alla consegna</option>
           </select>
         </Field>
+        {(payment === "pagato_anticipo" || payment === "pagato_consegna") && (
+          <Field label="Metodo di pagamento">
+            <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}
+              className="w-full bg-card border border-border rounded-lg p-3">
+              <option value="contanti">Contanti</option>
+              <option value="pos">POS</option>
+              <option value="bonifico">Bonifico</option>
+              <option value="altro">Altro</option>
+            </select>
+          </Field>
+        )}
       </div>
 
       <Field label="Prodotti, bundle e righe personalizzate">

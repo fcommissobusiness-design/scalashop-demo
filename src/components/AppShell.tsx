@@ -25,7 +25,7 @@ const NAV_GROUPS: NavGroup[] = [
     { to: "/b2b", label: "B2B", short: "B2B", locked: true },
   ]},
   { label: "Magazzino e Prodotti", items: [
-    { to: "/magazzino", label: "Magazzino", short: "Magazzino" },
+    { to: "/magazzino", label: "Magazzino", short: "Magazzino", locked: true },
     { to: "/previsioni-giornaliere", label: "Previsioni giornaliere", short: "Previsioni", locked: true },
     { to: "/prodotti", label: "Prodotti", short: "Prodotti" },
     { to: "/entrate-merci", label: "Scarico Prodotti", short: "Scarico", locked: true },
@@ -442,7 +442,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                       const active = isActive(n.to);
                       return (
                         <Link key={`${g.label}-${n.to}`} to={n.to} onClick={() => setMoreOpen(false)}
-                          className={`px-3 py-2.5 rounded-lg text-sm font-medium flex items-center justify-between gap-2 ${active ? "bg-brand-green text-brand-cream" : "bg-card text-foreground/80"} ${n.locked ? "opacity-70" : ""}`}>
+                          className={`px-3 py-2.5 rounded-lg text-sm font-medium flex items-center justify-between gap-2 border-2 transition ${active ? "bg-brand-green text-brand-cream border-brand-green" : "bg-card text-foreground/80 border-brand-green/20 hover:border-brand-gold/40"} ${n.locked ? "opacity-70" : ""}`}>
                           <span>{n.label}</span>
                           {n.locked && <span title="Disponibile con il piano a pagamento" className="text-[10px] leading-none">🔒</span>}
                         </Link>
@@ -507,13 +507,14 @@ function LockedOverlayWrapper({ children }: { children: ReactNode }) {
 
 /** Pulsante flottante "Richiedi Assistenza" sempre visibile, apre WhatsApp. */
 function SupportButton() {
+  const supportUrl = `${WA_URL}?text=${encodeURIComponent("Ciao, ho bisogno di assistenza per la demo di ScalaShop")}`;
   return (
     <a
-      href={WA_URL}
+      href={supportUrl}
       target="_blank"
       rel="noopener noreferrer"
       style={{ bottom: "calc(5.5rem + env(safe-area-inset-bottom))" }}
-      className="fixed md:!bottom-3 right-3 md:left-3 md:right-auto z-40 inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-brand-green text-brand-cream text-[11px] font-semibold shadow-lg border border-brand-gold/40 hover:brightness-110 transition"
+      className="fixed md:!bottom-3 left-3 md:right-auto z-40 inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-brand-green text-brand-cream text-[11px] font-semibold shadow-lg border border-brand-gold/40 hover:brightness-110 transition"
       aria-label="Richiedi Assistenza"
     >
       <span aria-hidden>💬</span> Richiedi Assistenza
@@ -559,7 +560,7 @@ function SyncBadge() {
   return (
     <div
       style={{ bottom: "calc(8.5rem + env(safe-area-inset-bottom))" }}
-      className="fixed md:!bottom-3 right-3 md:left-auto z-40 pointer-events-none">
+      className="hidden md:block fixed md:!bottom-3 right-3 md:left-auto z-40 pointer-events-none">
       <div className={`text-[10px] font-semibold px-2 py-1 rounded-full shadow-sm border border-border/50 ${m.color}`}>
         ● {m.label}
       </div>
@@ -572,17 +573,17 @@ function GlobalTrialBanner({ userId }: { userId: string }) {
   const remaining = getTrialDaysLeft(userId);
   if (remaining <= 0) return null;
   return (
-    <div className="px-4 md:px-6 pt-3">
-      <div className="rounded-xl px-4 py-3 flex items-center justify-between gap-3 shadow-sm"
+    <div className="px-3 md:px-6 pt-2 md:pt-3">
+      <div className="rounded-xl px-3 md:px-4 py-2 md:py-3 flex items-center justify-between gap-2 md:gap-3 shadow-sm"
            style={{ background: "linear-gradient(135deg, var(--brand-green), var(--brand-green-dark))" }}>
         <div className="text-brand-cream min-w-0">
-          <p className="text-[10px] uppercase tracking-wider text-brand-gold font-bold leading-none">Demo gratuita ScalaShop</p>
-          <p className="text-xs md:text-sm mt-1 leading-snug truncate">
+          <p className="text-[9px] md:text-[10px] uppercase tracking-wider text-brand-gold font-bold leading-none">Demo gratuita ScalaShop</p>
+          <p className="text-[11px] md:text-sm mt-0.5 md:mt-1 leading-snug truncate">
             Ti restano <span className="text-brand-gold font-bold">{remaining} giorn{remaining === 1 ? "o" : "i"}</span> per testare il nuovo sistema operativo della tua attività.
           </p>
         </div>
         <a href={WA_URL} target="_blank" rel="noopener noreferrer"
-           className="shrink-0 inline-flex items-center justify-center px-3 py-2 rounded-lg bg-brand-gold text-white text-xs font-bold shadow hover:brightness-105 transition">
+           className="shrink-0 inline-flex items-center justify-center px-2.5 md:px-3 py-1.5 md:py-2 rounded-lg bg-brand-gold text-white text-[11px] md:text-xs font-bold shadow hover:brightness-105 transition">
           Attivalo Ora
         </a>
       </div>

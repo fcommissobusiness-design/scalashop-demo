@@ -84,6 +84,14 @@ function Dashboard() {
     .filter((o) => o.status === "in_attesa" || o.status === "pronto" || o.status === "da_consegnare")
     .sort((a, b) => +new Date(a.pickupDate) - +new Date(b.pickupDate));
 
+  // Limita le liste in dashboard: max 5 per sezione, "Visualizza tutti" rimanda alla scheda
+  // con il timeframe corrente come query string.
+  const DASH_MAX = 5;
+  const ritiriShown = ritiriFrame.slice(0, DASH_MAX);
+  const salesShown = salesInFrame.slice(0, DASH_MAX);
+  const consegneShown = consegneAperte.slice(0, DASH_MAX);
+  const tfSearch = { tf: tfId } as any;
+
   const clientById = (id: string) => clients.find((c) => c.id === id);
   const productById = (id: string) => products.find((p) => p.id === id);
   const openSaleEditor = (saleId: string) => {
@@ -169,13 +177,13 @@ function Dashboard() {
         <section>
           <div className="flex justify-between items-center mb-3">
             <h2 className="font-display text-xl text-brand-green">Ritiri ({ritiriFrame.length})</h2>
-            <Link to="/ordini" className="text-xs text-brand-gold font-semibold">Tutti gli ordini →</Link>
+            <Link to="/ordini" search={tfSearch} className="text-xs text-brand-gold font-semibold">Visualizza tutti gli ordini →</Link>
           </div>
           {ritiriFrame.length === 0 && (
             <div className="bg-card rounded-xl p-6 text-center text-sm text-muted-foreground border border-brand-green/25">Nessun ritiro nel periodo.</div>
           )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {ritiriFrame.map((o) => {
+            {ritiriShown.map((o) => {
               const c = clientById(o.clientId);
               const m = orderMargin(o, products, bundles);
               return (
@@ -222,23 +230,30 @@ function Dashboard() {
               );
             })}
           </div>
+          {ritiriFrame.length > DASH_MAX && (
+            <div className="text-center mt-2">
+              <Link to="/ordini" search={tfSearch} className="inline-block text-xs font-semibold text-brand-gold underline underline-offset-2">
+                Visualizza tutti gli ordini ({ritiriFrame.length}) →
+              </Link>
+            </div>
+          )}
         </section>
 
         {/* SCONTRINI */}
         <section>
           <div className="flex justify-between items-center mb-3">
             <h2 className="font-display text-xl text-brand-green">Scontrini ({salesInFrame.length})</h2>
+            <Link to="/scontrini" className="text-xs text-brand-gold font-semibold">Visualizza tutti gli scontrini →</Link>
           </div>
           {salesInFrame.length === 0 && (
             <div className="bg-card rounded-xl p-6 text-center text-sm text-muted-foreground border border-brand-green/25">Nessuno scontrino nel periodo.</div>
           )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {salesInFrame.slice(0, 12).map((s) => {
+            {salesShown.map((s) => {
               const c = s.clientId ? clientById(s.clientId) : null;
               return (
                 <button key={s.id} type="button" onClick={() => openSaleEditor(s.id)}
-                  onPointerUp={(e) => { if (e.pointerType === "touch") openSaleEditor(s.id); }}
-                  className="bg-card rounded-xl p-3 text-sm text-left active:opacity-80 touch-manipulation">
+                  className="bg-card rounded-xl p-4 text-sm text-left active:opacity-80 touch-manipulation shadow-sm border border-brand-green/25">
                   <div className="flex justify-between">
                     <span className="font-semibold">{c?.name ?? s.clientNameInput ?? "Anonimo"}</span>
                     <span className="text-brand-green font-bold">{formatEuro(s.total)}</span>
@@ -251,19 +266,26 @@ function Dashboard() {
             })}
 
           </div>
+          {salesInFrame.length > DASH_MAX && (
+            <div className="text-center mt-2">
+              <Link to="/scontrini" className="inline-block text-xs font-semibold text-brand-gold underline underline-offset-2">
+                Visualizza tutti gli scontrini ({salesInFrame.length}) →
+              </Link>
+            </div>
+          )}
         </section>
 
         {/* CONSEGNE */}
         <section>
           <div className="flex justify-between items-center mb-3">
             <h2 className="font-display text-xl text-brand-green">Consegne ({consegneAperte.length})</h2>
-            <Link to="/consegne" className="text-xs text-brand-gold font-semibold">Tutte le consegne →</Link>
+            <Link to="/consegne" className="text-xs text-brand-gold font-semibold">Visualizza tutte le consegne →</Link>
           </div>
           {consegneAperte.length === 0 && (
             <div className="bg-card rounded-xl p-6 text-center text-sm text-muted-foreground border border-brand-green/25">Nessuna consegna aperta nel periodo.</div>
           )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {consegneAperte.slice(0, 8).map((d) => {
+            {consegneShown.map((d) => {
               const c = clientById(d.clientId);
               const o = d.orderId ? orders.find(x => x.id === d.orderId) : null;
               return (
@@ -280,6 +302,13 @@ function Dashboard() {
             })}
 
           </div>
+          {consegneAperte.length > DASH_MAX && (
+            <div className="text-center mt-2">
+              <Link to="/consegne" className="inline-block text-xs font-semibold text-brand-gold underline underline-offset-2">
+                Visualizza tutte le consegne ({consegneAperte.length}) →
+              </Link>
+            </div>
+          )}
         </section>
       </div>
 
@@ -287,15 +316,15 @@ function Dashboard() {
 
       {pickAction && (
         <Sheet open={true} onClose={() => setPickAction(false)} title="Cosa vuoi creare?">
-          <div className="grid grid-cols-1 gap-2">
+          <div className="grid grid-cols-1 gap-3">
             <button onClick={() => { setPickAction(false); setOpenOrder(true); }}
-              className="bg-brand-green text-brand-cream rounded-xl py-4 font-semibold">Nuovo ordine</button>
+              className="bg-brand-green text-brand-cream rounded-xl py-4 font-semibold border-2 border-brand-green shadow-sm hover:brightness-110 transition">Nuovo ordine</button>
             <button onClick={() => { setPickAction(false); setOpenSale(true); }}
-              className="bg-brand-gold text-white rounded-xl py-4 font-semibold">Nuovo scontrino</button>
+              className="bg-brand-gold text-white rounded-xl py-4 font-semibold border-2 border-brand-gold shadow-sm hover:brightness-110 transition">Nuovo scontrino</button>
             <button onClick={() => { setPickAction(false); setOpenDeliv(true); }}
-              className="bg-blue-600 text-white rounded-xl py-4 font-semibold">Nuova consegna</button>
+              className="bg-blue-600 text-white rounded-xl py-4 font-semibold border-2 border-blue-700 shadow-sm hover:brightness-110 transition">Nuova consegna</button>
             <button onClick={() => { setPickAction(false); openDemoLock("Nuovo Pagamento"); }}
-              className="bg-danger text-white rounded-xl py-4 font-semibold">Nuovo pagamento</button>
+              className="bg-danger text-white rounded-xl py-4 font-semibold border-2 border-danger shadow-sm hover:brightness-110 transition">Nuovo pagamento</button>
           </div>
         </Sheet>
       )}
@@ -571,7 +600,6 @@ export function NewSaleSheet({ open, saleId, onClose, onSave }: {
             <option value="contanti">Contanti</option>
             <option value="pos">POS</option>
             <option value="bonifico">Bonifico</option>
-            <option value="carta">Carta</option>
             <option value="altro">Altro</option>
           </select>
         </Field>

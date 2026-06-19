@@ -99,6 +99,7 @@ function CassaPage() {
 
   // ============ KPI: solo entrate totali ============
   const entrateTot = useMemo(() => movements.reduce((s, m) => s + m.amount, 0), [movements]);
+  const margineTot = useMemo(() => movements.reduce((s, m) => s + (m.margin ?? 0), 0), [movements]);
 
   const visibleList = useMemo(
     () => filter === "all" ? movements : movements.filter(m => m.kind === filter),
@@ -143,9 +144,17 @@ function CassaPage() {
 
       {/* KPI Entrate totali (sotto i filtri) */}
       <div className="p-4 md:p-6 pb-2">
-        <div className="rounded-xl p-4 bg-brand-green text-brand-cream text-center border border-brand-green">
-          <p className="text-[11px] uppercase tracking-wide text-brand-gold">Entrate totali</p>
-          <p className="font-display text-3xl mt-1 text-brand-gold">{formatEuro(entrateTot)}</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="rounded-xl p-4 bg-brand-green text-brand-cream text-center border border-brand-green">
+            <p className="text-[11px] uppercase tracking-wide text-brand-gold">Entrate totali</p>
+            <p className="font-display text-3xl mt-1 text-brand-gold">{formatEuro(entrateTot)}</p>
+            <p className="text-[11px] text-brand-cream/70 mt-1">{tf.label.toLowerCase()}</p>
+          </div>
+          <div className="rounded-xl p-4 bg-card text-center border border-brand-green/25">
+            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Margine</p>
+            <p className="font-display text-3xl mt-1 text-brand-green">{formatEuro(margineTot)}</p>
+            <p className="text-[11px] text-muted-foreground mt-1">su ordini e scontrini del periodo</p>
+          </div>
         </div>
       </div>
 

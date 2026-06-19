@@ -1,4 +1,5 @@
 /* Demo helpers: locked routes, trial countdown, business name. */
+import { getDemoMeta, patchDemoMeta } from "./store";
 
 export const LOCKED_PATHS = new Set<string>([
   "/offerte", "/b2b", "/entrate-merci", "/fornitori", "/previsioni-giornaliere",
@@ -36,15 +37,23 @@ export function getBusinessName(userId: string): string {
   return readOnboarding(userId)?.businessName?.trim() || "";
 }
 
-/** Trial inizia alla PRIMA entrata effettiva nella demo (dopo registrazione + onboarding). */
+/** Trial inizia alla PRIMA entrata effettiva nella demo (dopo registrazione + onboarding).
+ *  La sorgente di verità è il cloud (user_state.__demoMeta.trialStart): così lo stesso
+ *  account vede lo stesso countdown da qualsiasi dispositivo. localStorage è solo
+ *  fallback per la primissima sessione prima dell'idratazione cloud. */
 export function getTrialStart(userId: string): number {
+  // 1) Cloud (preferito, sincronizzato multi-device)
+  try {
+    const meta = getDemoMeta();
+    if (meta?.trialStart && meta.trialStart > 0) return meta.trialStart;
+  } catch {}
+  // 2) Fallback locale (legacy / pre-hydrate)
   if (typeof window === "undefined") return Date.now();
   const raw = localStorage.getItem(`${TRIAL_START_KEY}:${userId}`);
   if (raw) {
     const n = Number(raw);
     if (!isNaN(n) && n > 0) return n;
   }
-  // Fallback: usa completedAt dell'onboarding se presente.
   const onb = readOnboarding(userId);
   if (onb?.completedAt) {
     const t = new Date(onb.completedAt).getTime();
@@ -57,11 +66,19 @@ export function getTrialStart(userId: string): number {
 }
 
 export function ensureTrialStarted(userId: string): number {
-  if (typeof window === "undefined") return Date.now();
   const existing = getTrialStart(userId);
-  if (existing > 0) return existing;
+  if (existing > 0) {
+    // Se è stato letto da locale o onboarding, propagalo anche nel cloud.
+    try {
+      if (!getDemoMeta()?.trialStart) patchDemoMeta({ trialStart: existing });
+    } catch {}
+    return existing;
+  }
   const now = Date.now();
-  localStorage.setItem(`${TRIAL_START_KEY}:${userId}`, String(now));
+  if (typeof window !== "undefined") localStorage.setItem(`${TRIAL_START_KEY}:${userId}`, String(now));
+  try {
+    patchDemoMeta({ trialStart: now });
+  } catch {}
   return now;
 }
 

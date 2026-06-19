@@ -14,14 +14,14 @@ const DELIVERY_LABEL: Record<DeliveryMode, string> = {
   ritiro: "Ritiro in negozio", domicilio: "Consegna a domicilio",
 };
 const PAY_LABEL: Record<PaymentMethod, string> = {
-  contanti: "Contanti", pos: "POS", bonifico: "Bonifico", carta: "Carta", altro: "Altro",
+  contanti: "Contanti", pos: "POS", bonifico: "Bonifico", carta: "POS", altro: "Altro",
 };
 const SOURCE_LABEL: Record<OrderSource, string> = {
   negozio: "Negozio", whatsapp: "WhatsApp", telefono: "Telefono", sito: "Sito", altro: "Altro",
   consegna: "Negozio", b2b: "Negozio",
 };
 const SOURCE_OPTIONS: OrderSource[] = ["negozio", "whatsapp", "telefono", "sito", "altro"];
-const PAY_OPTIONS: PaymentMethod[] = ["contanti", "pos", "bonifico", "carta", "altro"];
+const PAY_OPTIONS: PaymentMethod[] = ["contanti", "pos", "bonifico", "altro"];
 
 function todayIso() {
   const d = new Date();

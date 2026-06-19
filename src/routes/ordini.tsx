@@ -11,11 +11,14 @@ import { CartEditor } from "@/components/CartEditor";
 import { buildOrderComanda, printComanda } from "@/lib/comanda";
 import { CustomDateBox } from "@/components/CustomDateBox";
 
-interface Search { f?: string }
+interface Search { f?: string; tf?: string }
 
 export const Route = createFileRoute("/ordini")({
   component: OrdiniPage,
-  validateSearch: (s: Record<string, unknown>): Search => ({ f: typeof s.f === "string" ? s.f : undefined }),
+  validateSearch: (s: Record<string, unknown>): Search => ({
+    f: typeof s.f === "string" ? s.f : undefined,
+    tf: typeof s.tf === "string" ? s.tf : undefined,
+  }),
 });
 
 const STATUS_STYLE: Record<OrderStatus, string> = {
@@ -81,6 +84,9 @@ function OrdiniPage() {
     else if (search.f === "pronti") setStatusSel(new Set(["pronto"]));
     else if (search.f === "ritirati") setStatusSel(new Set(["ritirato"]));
   }, [search.f]);
+  useEffect(() => {
+    if (search.tf) setTfId(search.tf as TimeFrameId);
+  }, [search.tf]);
 
   const toggleStatus = (s: OrderStatus) => setStatusSel(prev => {
     const n = new Set(prev); n.has(s) ? n.delete(s) : n.add(s); return n;
@@ -623,7 +629,6 @@ export function OrderSheet({ mode, orderId, onClose, onSave }: {
             <option value="contanti">Contanti</option>
             <option value="pos">POS</option>
             <option value="bonifico">Bonifico</option>
-            <option value="carta">Carta</option>
             <option value="altro">Altro</option>
           </select>
         </Field>
