@@ -17,7 +17,7 @@ interface Props {
 }
 
 export function CartEditor({ items, onChange }: Props) {
-  const { products, bundles } = useStore();
+  const { products, bundles, orders, casualSales, deliveries } = useStore();
   const navigate = useNavigate();
   const [tab, setTab] = useState<Tab>("prodotto");
   const [search, setSearch] = useState("");
@@ -27,30 +27,31 @@ export function CartEditor({ items, onChange }: Props) {
   const updateRow = (idx: number, patch: Partial<OrderItem>) =>
     onChange(items.map((it, i) => (i === idx ? { ...it, ...patch } : it)));
 
-  // Prodotto: se già presente come "product", aggiorna qty; altrimenti aggiunge una riga
+  // Prodotto: se già presente come "product", aggiorna qty; altrimenti aggiunge una riga.
+  // Importante (richiesta utente): se l'utente porta la quantità a 0 NON rimuoviamo la riga,
+  // la rimozione avviene SOLO dal pulsante X. Aggiungiamo soltanto quando qty > 0.
   const upsertProduct = (id: string, qty: number) => {
     const exIdx = items.findIndex(
       (it) => itemKind(it) === "product" && it.productId === id,
     );
-    if (qty <= 0) {
-      if (exIdx >= 0) removeRow(exIdx);
+    if (exIdx >= 0) {
+      updateRow(exIdx, { qty: Math.max(0, qty) });
       return;
     }
-    if (exIdx >= 0) updateRow(exIdx, { qty });
-    else onChange([...items, { productId: id, qty, kind: "product" }]);
+    if (qty <= 0) return;
+    onChange([...items, { productId: id, qty, kind: "product" }]);
   };
 
-  // Bundle: se già presente come "bundle", aggiorna qty
   const upsertBundle = (id: string, qty: number) => {
     const exIdx = items.findIndex(
       (it) => itemKind(it) === "bundle" && it.bundleId === id,
     );
-    if (qty <= 0) {
-      if (exIdx >= 0) removeRow(exIdx);
+    if (exIdx >= 0) {
+      updateRow(exIdx, { qty: Math.max(0, qty) });
       return;
     }
-    if (exIdx >= 0) updateRow(exIdx, { qty });
-    else onChange([...items, { productId: "", qty, kind: "bundle", bundleId: id }]);
+    if (qty <= 0) return;
+    onChange([...items, { productId: "", qty, kind: "bundle", bundleId: id }]);
   };
 
   // Riga personalizzata: aggiunge sempre una nuova riga
@@ -74,14 +75,29 @@ export function CartEditor({ items, onChange }: Props) {
 
   const total = items.reduce((s, i) => s + itemLineTotal(i, products, bundles), 0);
 
-  // ---------- liste filtrate ----------
-  const productsFiltered = useMemo(
-    () =>
-      products
-        .filter((p) => p.active && p.name.toLowerCase().includes(search.toLowerCase()))
-        .slice(0, 30),
-    [products, search],
-  );
+  // Calcolo "più usati / più recenti" per la lista iniziale (senza ricerca).
+  const productUsage = useMemo(() => {
+    const m = new Map<string, number>();
+    const bump = (id?: string, w = 1) => { if (!id) return; m.set(id, (m.get(id) ?? 0) + w); };
+    for (const o of orders) for (const it of o.items) bump(it.productId);
+    for (const s of casualSales) for (const it of s.items) bump(it.productId);
+    for (const d of deliveries) {
+      const linked = d.orderId ? orders.find((o) => o.id === d.orderId) : null;
+      if (linked) for (const it of linked.items) bump(it.productId, 0.5);
+    }
+    return m;
+  }, [orders, casualSales, deliveries]);
+
+  const productsFiltered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    const active = products.filter((p) => p.active);
+    if (q) {
+      return active.filter((p) => p.name.toLowerCase().includes(q)).slice(0, 30);
+    }
+    // Niente ricerca: max 5, ordinati per utilizzo (poi inserimento più recente).
+    const sorted = [...active].sort((a, b) => (productUsage.get(b.id) ?? 0) - (productUsage.get(a.id) ?? 0));
+    return sorted.slice(0, 5);
+  }, [products, search, productUsage]);
   const bundlesFiltered = useMemo(
     () =>
       bundles
@@ -106,6 +122,13 @@ export function CartEditor({ items, onChange }: Props) {
                 const k = itemKind(it);
                 if (k === "custom") updateRow(idx, { customPrice: p });
                 else updateRow(idx, { unitPriceOverride: p });
+              }}
+              onLineTotalChange={(t) => {
+                const q = Math.max(0.0001, it.qty || 1);
+                const newUnit = +(t / q).toFixed(2);
+                const k = itemKind(it);
+                if (k === "custom") updateRow(idx, { customPrice: newUnit });
+                else updateRow(idx, { unitPriceOverride: newUnit });
               }}
               onRemove={() => removeRow(idx)}
             />
@@ -142,6 +165,12 @@ export function CartEditor({ items, onChange }: Props) {
             className="w-full bg-card border border-border rounded-lg p-2.5 text-sm"
           />
           <div className="max-h-72 overflow-y-auto mt-2 space-y-1">
+            {/* "Aggiungi nuovo prodotto" SEMPRE visibile, in cima */}
+            <button type="button"
+              onClick={() => navigate({ to: "/prodotti", search: { new: 1, name: search } as any })}
+              className="w-full bg-brand-gold/10 border-2 border-dashed border-brand-gold/40 text-brand-green rounded-lg py-2 text-sm font-semibold hover:bg-brand-gold/15 transition">
+              + Aggiungi nuovo prodotto{search.trim() ? ` "${search.trim()}"` : ""}
+            </button>
             {productsFiltered.map((p) => {
               const ex = items.find((it) => itemKind(it) === "product" && it.productId === p.id);
               const qty = ex?.qty ?? 0;
@@ -156,15 +185,11 @@ export function CartEditor({ items, onChange }: Props) {
                 </div>
               );
             })}
-            {productsFiltered.length === 0 && (
-              <div className="space-y-2 py-2">
-                <p className="text-xs text-muted-foreground text-center">Nessun prodotto trovato.</p>
-                <button type="button"
-                  onClick={() => navigate({ to: "/prodotti", search: { new: 1, name: search } as any })}
-                  className="w-full bg-brand-gold/10 border-2 border-dashed border-brand-gold/40 text-brand-green rounded-lg py-2 text-sm font-semibold hover:bg-brand-gold/15 transition">
-                  + Aggiungi nuovo prodotto
-                </button>
-              </div>
+            {productsFiltered.length === 0 && search.trim() && (
+              <p className="text-xs text-muted-foreground text-center py-2">Nessun prodotto trovato per "{search}".</p>
+            )}
+            {!search.trim() && productsFiltered.length > 0 && products.filter(p=>p.active).length > productsFiltered.length && (
+              <p className="text-[10px] text-muted-foreground text-center pt-1">Mostrati {productsFiltered.length} prodotti più usati. Digita per cercarne altri.</p>
             )}
           </div>
         </>
@@ -212,13 +237,14 @@ export function CartEditor({ items, onChange }: Props) {
 }
 
 function CartRow({
-  item, products, bundles, onQtyChange, onPriceChange, onRemove,
+  item, products, bundles, onQtyChange, onPriceChange, onLineTotalChange, onRemove,
 }: {
   item: OrderItem;
   products: Product[];
   bundles: Bundle[];
   onQtyChange: (qty: number) => void;
   onPriceChange: (price: number) => void;
+  onLineTotalChange: (total: number) => void;
   onRemove: () => void;
 }) {
   const name = itemDisplayName(item, products, bundles);
@@ -238,9 +264,11 @@ function CartRow({
       <div className="flex-1 min-w-0">
         <p className="text-sm truncate">{name}</p>
         <div className="text-[11px] text-muted-foreground flex items-center gap-1 flex-wrap">
-          <span>€</span>
+          <span>unit. €</span>
           <PriceInput value={unitPrice} onChange={onPriceChange} />
-          <span>{p?.unit ? `/${p.unit}` : ""} · subtot. {formatEuro(total)}</span>
+          <span>{p?.unit ? `/${p.unit}` : ""}</span>
+          <span>· tot. €</span>
+          <PriceInput value={total} onChange={onLineTotalChange} />
         </div>
       </div>
       <QtyInput value={item.qty} step={step} unit={p?.unit} onChange={onQtyChange} />
@@ -294,8 +322,9 @@ function CustomRowForm({
   onAdd: (row: { name: string; qty: number; price: number; cost?: number; productId?: string }) => void;
 }) {
   const [name, setName] = useState("");
-  const [qty, setQty] = useState<number>(1);
-  const [price, setPrice] = useState<number>(0);
+  // Campi liberi (l'utente deve poter cancellare lo zero e digitare manualmente).
+  const [qtyText, setQtyText] = useState<string>("1");
+  const [priceText, setPriceText] = useState<string>("");
   const [cost, setCost] = useState<string>("");
   const [productQ, setProductQ] = useState("");
   const [productId, setProductId] = useState<string>("");
@@ -310,6 +339,8 @@ function CustomRowForm({
     ? Number(cost.replace(",", "."))
     : (linkedCost ?? undefined);
 
+  const qty = Number((qtyText || "").replace(",", "."));
+  const price = Number((priceText || "").replace(",", "."));
   const canAdd = name.trim().length > 0 && qty > 0 && price > 0;
 
   const submit = () => {
@@ -321,7 +352,7 @@ function CustomRowForm({
       cost: computedCost != null && !isNaN(computedCost) ? computedCost : undefined,
       productId: productId || undefined,
     });
-    setName(""); setQty(1); setPrice(0); setCost(""); setProductQ(""); setProductId("");
+    setName(""); setQtyText("1"); setPriceText(""); setCost(""); setProductQ(""); setProductId("");
   };
 
   return (
@@ -337,14 +368,18 @@ function CustomRowForm({
       <div className="grid grid-cols-3 gap-2">
         <div>
           <label className="text-[10px] uppercase text-muted-foreground tracking-wide">Quantità</label>
-          <input type="number" step="0.01" min="0" value={qty}
-            onChange={(e) => setQty(Number(e.target.value))}
+          <input type="text" inputMode="decimal" value={qtyText}
+            onChange={(e) => setQtyText(e.target.value.replace(/[^\d.,]/g, ""))}
+            onFocus={(e) => e.target.select()}
+            placeholder="es. 1"
             className="w-full bg-brand-cream border border-border rounded-lg p-2 text-sm" />
         </div>
         <div>
           <label className="text-[10px] uppercase text-muted-foreground tracking-wide">Prezzo (€/u)</label>
-          <input type="number" step="0.01" min="0" value={price}
-            onChange={(e) => setPrice(Number(e.target.value))}
+          <input type="text" inputMode="decimal" value={priceText}
+            onChange={(e) => setPriceText(e.target.value.replace(/[^\d.,]/g, ""))}
+            onFocus={(e) => e.target.select()}
+            placeholder="es. 5,00"
             className="w-full bg-brand-cream border border-border rounded-lg p-2 text-sm" />
         </div>
         <div>
