@@ -7,6 +7,7 @@ import { itemDisplayName } from "@/lib/metrics";
 import { NewSaleSheet } from "@/routes/index";
 import { CustomDateBox } from "@/components/CustomDateBox";
 import type { DeliveryMode, OrderSource, PaymentMethod } from "@/lib/data";
+import { useReceiptNumbers } from "@/lib/receipt-numbers";
 
 export const Route = createFileRoute("/scontrini")({ component: ScontriniPage });
 
@@ -31,6 +32,7 @@ function todayIso() {
 
 function ScontriniPage() {
   const { casualSales, clients, products, bundles, addClient, addCasualSale } = useStore();
+  const receiptNums = useReceiptNumbers();
   const [tfId, setTfId] = useState<TimeFrameId>("today");
   const [cs, setCs] = useState(todayIso());
   const [ce, setCe] = useState(todayIso());
@@ -146,6 +148,8 @@ function ScontriniPage() {
         )}
         {filtered.map((s) => {
           const c = clientById(s.clientId);
+          const rn = receiptNums.label(s.id);
+          const hasName = !!(c?.name || s.clientNameInput);
           return (
             <button
               key={s.id}
@@ -155,10 +159,13 @@ function ScontriniPage() {
             >
               <div className="flex justify-between gap-2">
                 <span className="font-semibold text-brand-green truncate">
-                  {c?.name ?? s.clientNameInput ?? "Anonimo"}
+                  {c?.name ?? s.clientNameInput ?? (rn ?? "Scontrino")}
                 </span>
                 <span className="text-brand-green font-bold">{formatEuro(s.total)}</span>
               </div>
+              {hasName && rn && (
+                <p className="text-[10px] uppercase tracking-wide text-brand-gold/80 font-semibold mt-0.5">{rn}</p>
+              )}
               <p className="text-xs text-muted-foreground mt-0.5">
                 {formatTime(s.date)} · {formatDate(s.date)} · {PAY_LABEL[s.paymentMethod ?? "altro"]} · {s.delivery === "domicilio" ? "Domicilio" : "Ritiro"} · {SOURCE_LABEL[s.source ?? "negozio"]}
               </p>
