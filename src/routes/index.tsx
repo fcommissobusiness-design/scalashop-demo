@@ -21,11 +21,13 @@ import { buildSaleComanda, printComanda } from "@/lib/comanda";
 import type { SupplierPayment } from "@/lib/data";
 import { CustomDateBox } from "@/components/CustomDateBox";
 import { openDemoLock } from "@/components/DemoLock";
+import { useReceiptNumbers } from "@/lib/receipt-numbers";
 
 export const Route = createFileRoute("/")({ component: Dashboard });
 
 function Dashboard() {
   const { orders, products, bundles, clients, casualSales, deliveries, supplierPayments, suppliers, productions, updateOrder, addCasualSale, addClient, addOrder, addSupplierPayment } = useStore();
+  const receiptNums = useReceiptNumbers();
   const todayIso = new Date().toISOString().slice(0, 10);
   const [tfId, setTfId] = useState<TimeFrameId>("today");
   const [customStart, setCustomStart] = useState<string>(todayIso);
@@ -193,6 +195,9 @@ function Dashboard() {
                       <div>
                         <p className="font-display text-lg leading-tight text-brand-green">{c?.name ?? o.clientNameInput ?? "—"}</p>
                         <p className="text-xs text-muted-foreground">{o.delivery === "domicilio" ? "Consegna" : "Ritiro"} {formatTime(o.pickupDate)} · {formatEuro(o.total)} · margine {formatEuro(m)}</p>
+                        {receiptNums.label(o.id) && (
+                          <p className="text-[10px] uppercase tracking-wide text-brand-gold/80 font-semibold mt-0.5">{receiptNums.label(o.id)}</p>
+                        )}
                       </div>
                       <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase whitespace-nowrap ${o.status === "pronto" ? "bg-blue-600/15 text-blue-700" : o.status === "da_consegnare" ? "bg-purple-600/15 text-purple-700" : "bg-warning/15 text-warning"}`}>
                         {o.status === "pronto" ? "Pronto" : o.status === "da_consegnare" ? "Da Consegnare" : "Attesa"}
@@ -255,10 +260,13 @@ function Dashboard() {
                 <button key={s.id} type="button" onClick={() => openSaleEditor(s.id)}
                   className="bg-card rounded-xl p-4 text-sm text-left active:opacity-80 touch-manipulation shadow-sm border border-brand-green/25">
                   <div className="flex justify-between">
-                    <span className="font-semibold">{c?.name ?? s.clientNameInput ?? "Anonimo"}</span>
+                    <span className="font-semibold">{c?.name ?? s.clientNameInput ?? (receiptNums.label(s.id) ?? "Scontrino")}</span>
                     <span className="text-brand-green font-bold">{formatEuro(s.total)}</span>
                   </div>
                   <p className="text-xs text-muted-foreground">{formatTime(s.date)} · {new Date(s.date).toLocaleDateString("it-IT")}</p>
+                  {(c?.name || s.clientNameInput) && receiptNums.label(s.id) && (
+                    <p className="text-[10px] uppercase tracking-wide text-brand-gold/80 font-semibold mt-0.5">{receiptNums.label(s.id)}</p>
+                  )}
                   <p className="text-xs text-foreground/70 mt-1">{s.items.map(i => itemDisplayName(i, products, bundles)).join(", ")}</p>
                   {s.notes && <p className="text-xs italic text-muted-foreground mt-1 line-clamp-1">Note: {s.notes}</p>}
                 </button>
@@ -296,6 +304,9 @@ function Dashboard() {
                     {o && <span className="text-brand-green font-bold">{formatEuro(o.total)}</span>}
                   </div>
                   <p className="text-xs text-muted-foreground">{formatDate(d.date)} · {d.timeSlot} · {d.status.replace(/_/g, " ")}</p>
+                  {receiptNums.label(d.id) && (
+                    <p className="text-[10px] uppercase tracking-wide text-brand-gold/80 font-semibold mt-0.5">{receiptNums.label(d.id)}</p>
+                  )}
                   <p className="text-xs text-foreground/70 mt-1 truncate">{d.address}</p>
                 </button>
               );
