@@ -145,6 +145,7 @@ function migrate(parsed: any): Store {
   (out as any).__demoCleanV5 = true;
   (out as any).__demoCleanV6 = true;
   (out as any).__clientsImportV7 = true;
+  (out as any).__demoResetV8 = true;
   if (parsed.__demoMeta && typeof parsed.__demoMeta === "object") {
     (out as any).__demoMeta = parsed.__demoMeta;
   }
@@ -172,7 +173,13 @@ function load(): Store {
   } catch {}
   // Prima installazione: applica anche qui l'import lista clienti V7.
   const fresh: Store = { ...SEED, clients: applyClientImportV7(SEED.clients) };
+  (fresh as any).__clientsSeedV2 = true;
+  (fresh as any).__cleanSeedV3 = true;
+  (fresh as any).__catalogV4 = true;
+  (fresh as any).__demoCleanV5 = true;
+  (fresh as any).__demoCleanV6 = true;
   (fresh as any).__clientsImportV7 = true;
+  (fresh as any).__demoResetV8 = true;
   localStorage.setItem(KEY, JSON.stringify(fresh));
   return fresh;
 }

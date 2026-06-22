@@ -7,6 +7,11 @@ import {
   isApplyingRemote,
 } from "./store";
 
+const PROTECTED_TUTORIAL_USER_ID = "e7a93a94-878e-45de-97eb-5bae42052044";
+const hasContent = (store: any) =>
+  ["products", "clients", "orders", "casualSales", "deliveries"].some((key) => Array.isArray(store?.[key]) && store[key].length > 0);
+const isBlankSnapshot = (store: any) => !hasContent(store);
+
 export type CloudSyncStatus = "idle" | "loading" | "ready" | "syncing" | "error" | "offline";
 
 // Status condiviso (per indicatore globale)
@@ -58,6 +63,11 @@ export function useCloudSync(userId: string | null) {
       updateStatus("syncing");
       try {
         const snapshot = getStoreSnapshot();
+        if (userId === PROTECTED_TUTORIAL_USER_ID && isBlankSnapshot(snapshot)) {
+          console.warn("[cloudSync] blank snapshot blocked for protected tutorial account");
+          updateStatus("ready");
+          return;
+        }
         const nextVersion = versionRef.current + 1;
         const { error } = await supabase
           .from("user_state")
