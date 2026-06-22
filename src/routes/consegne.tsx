@@ -9,6 +9,7 @@ import { makeTimeFrame, inFrame, TIME_FRAME_OPTIONS, type TimeFrameId } from "@/
 import { DeliveryFullSheet } from "@/components/DeliveryFullSheet";
 import { CustomDateBox } from "@/components/CustomDateBox";
 import { itemDisplayName } from "@/lib/metrics";
+import { useReceiptNumbers } from "@/lib/receipt-numbers";
 
 export const Route = createFileRoute("/consegne")({ component: ConsegnePage });
 
@@ -33,6 +34,7 @@ function toDateInput(d: Date) {
 
 function ConsegnePage() {
   const { deliveries, clients, orders, products, bundles, updateDelivery, deleteDelivery } = useStore();
+  const receiptNums = useReceiptNumbers();
   const [openNew, setOpenNew] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [waId, setWaId] = useState<string | null>(null);
@@ -134,6 +136,7 @@ function ConsegnePage() {
         {list.map(d => {
           const c = clientById(d.clientId);
           const o = d.orderId ? orders.find(o => o.id === d.orderId) : null;
+          const rn = receiptNums.label(d.id) ?? (o ? receiptNums.label(o.id) : null);
           return (
             <div key={d.id} className="bg-card rounded-xl p-4 shadow-sm">
               <button onClick={() => setEditId(d.id)} className="w-full text-left">
@@ -141,6 +144,9 @@ function ConsegnePage() {
                   <div className="min-w-0 flex-1">
                     <p className="font-display text-lg text-brand-green leading-tight truncate">{c?.name ?? d.clientNameInput ?? "—"}</p>
                     <p className="text-xs text-muted-foreground truncate">{c?.phone ?? "—"}</p>
+                    {rn && (
+                      <p className="text-[10px] uppercase tracking-wide text-brand-gold/80 font-semibold mt-0.5">{rn}</p>
+                    )}
                   </div>
                   <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase whitespace-nowrap ${STATUS_STYLE[d.status]}`}>{STATUS_LABEL[d.status]}</span>
                 </div>
