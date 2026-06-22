@@ -21,11 +21,13 @@ import { buildSaleComanda, printComanda } from "@/lib/comanda";
 import type { SupplierPayment } from "@/lib/data";
 import { CustomDateBox } from "@/components/CustomDateBox";
 import { openDemoLock } from "@/components/DemoLock";
+import { useReceiptNumbers } from "@/lib/receipt-numbers";
 
 export const Route = createFileRoute("/")({ component: Dashboard });
 
 function Dashboard() {
   const { orders, products, bundles, clients, casualSales, deliveries, supplierPayments, suppliers, productions, updateOrder, addCasualSale, addClient, addOrder, addSupplierPayment } = useStore();
+  const receiptNums = useReceiptNumbers();
   const todayIso = new Date().toISOString().slice(0, 10);
   const [tfId, setTfId] = useState<TimeFrameId>("today");
   const [customStart, setCustomStart] = useState<string>(todayIso);
