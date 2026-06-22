@@ -10,6 +10,7 @@ import { makeTimeFrame, inFrame, TIME_FRAME_OPTIONS, type TimeFrameId } from "@/
 import { CartEditor } from "@/components/CartEditor";
 import { buildOrderComanda, printComanda } from "@/lib/comanda";
 import { CustomDateBox } from "@/components/CustomDateBox";
+import { useReceiptNumbers } from "@/lib/receipt-numbers";
 
 interface Search { f?: string; tf?: string }
 
@@ -58,6 +59,7 @@ function toDateInput(d: Date) {
 function OrdiniPage() {
   const search = useSearch({ from: "/ordini" }) as Search;
   const { orders, clients, products, bundles, addOrder } = useStore();
+  const receiptNums = useReceiptNumbers();
   const [statusSel, setStatusSel] = useState<Set<OrderStatus>>(new Set());
   const [deliverySel, setDeliverySel] = useState<Set<DeliveryMode>>(new Set());
   const [q, setQ] = useState("");
@@ -197,6 +199,7 @@ function OrdiniPage() {
           const c = clientById(o.clientId);
           const m = orderMargin(o, products, bundles);
           const overdue = o.status === "in_attesa" && +new Date(o.pickupDate) < Date.now() - 86400000;
+          const rn = receiptNums.label(o.id);
           return (
             <div key={o.id} className={`bg-card rounded-xl p-4 shadow-sm ${overdue ? "ring-2 ring-danger/40" : ""}`}>
               <div className="flex justify-between items-start mb-2 gap-2">
@@ -204,6 +207,9 @@ function OrdiniPage() {
                   <p className="font-display text-lg text-brand-green leading-tight truncate">{c?.name ?? o.clientNameInput ?? "—"}</p>
                   <p className="text-[11px] text-muted-foreground truncate">{c?.phone ?? "—"} · {SOURCE_LABEL[o.source ?? "negozio"]}</p>
                   {o.label && <p className="text-xs text-brand-gold font-semibold mt-0.5 truncate">{o.label}</p>}
+                  {rn && (
+                    <p className="text-[10px] uppercase tracking-wide text-brand-gold/80 font-semibold mt-0.5">{rn}</p>
+                  )}
                 </button>
 
                 <div className="flex flex-col items-end gap-1 shrink-0">
