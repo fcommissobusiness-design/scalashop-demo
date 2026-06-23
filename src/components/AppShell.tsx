@@ -149,7 +149,7 @@ function AuthScreen() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-brand-cream text-brand-green px-6 py-10">
       <img src={logoAsset.url} alt="ScalaShop" className="h-20 md:h-24 object-contain mb-2" />
-      <p className="text-sm text-muted-foreground mb-4 text-center max-w-xs">Gestionale semplice per food retail artigianale. Demo gratuita 14 giorni.</p>
+      <p className="text-sm text-muted-foreground mb-4 text-center max-w-xs">Gestionale per gastronomie e botteghe alimentari. Testalo gratuitamente per 14 giorni.</p>
       <div className="flex bg-brand-green-dark/10 rounded-full p-1 mb-4 text-xs font-semibold">
         <button type="button" onClick={() => setMode("register")}
           className={`px-4 py-1.5 rounded-full transition ${mode === "register" ? "bg-brand-green text-brand-cream" : "text-brand-green/70"}`}>Registrati</button>
