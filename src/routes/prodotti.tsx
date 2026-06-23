@@ -50,20 +50,11 @@ function ProdottiPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search.new]);
 
-  const grouped = useMemo(() => {
-    const list = products.filter(p => {
+  const filtered = useMemo(() => {
+    return products.filter(p => {
       if (q && !p.name.toLowerCase().includes(q.toLowerCase())) return false;
       return true;
     });
-    // Demo: nessun filtro/categoria predefinito. Raggruppiamo dinamicamente
-    // SOLO per le categorie effettivamente presenti tra i prodotti caricati.
-    const map = new Map<string, Product[]>();
-    for (const p of list) {
-      const key = (p.category as string) || "Prodotti";
-      if (!map.has(key)) map.set(key, []);
-      map.get(key)!.push(p);
-    }
-    return map;
   }, [products, q]);
 
   return (
@@ -76,16 +67,14 @@ function ProdottiPage() {
       </div>
 
       <div className="p-4 md:p-6 space-y-5">
-        {grouped.size === 0 && (
+        {filtered.length === 0 && (
           <div className="bg-card rounded-xl p-6 text-center text-sm text-muted-foreground border border-brand-green/25">
             Nessun prodotto. <button onClick={() => setOpenNew(true)} className="text-brand-gold font-semibold underline underline-offset-2">Aggiungi nuovo prodotto</button>.
           </div>
         )}
-        {[...grouped.entries()].map(([cat, items]) => (
-          <section key={cat}>
-            <h2 className="font-display text-lg text-brand-green mb-2">{cat}</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-              {items.map(p => {
+        {filtered.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+            {filtered.map(p => {
                 const margin = calcMargin(p);
                 const outOfStock = isOutOfStock(p);
                 return (
@@ -113,9 +102,8 @@ function ProdottiPage() {
                   </div>
                 );
               })}
-            </div>
-          </section>
-        ))}
+          </div>
+        )}
       </div>
 
       <Fab onClick={() => { setPrefillName(""); setOpenNew(true); }} />
