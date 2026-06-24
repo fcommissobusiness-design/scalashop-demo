@@ -204,6 +204,11 @@ function AuthScreen() {
       <p className="mt-6 text-[11px] opacity-60 max-w-xs text-center">
         Lo stesso account sincronizza ordini, clienti, cassa e magazzino su iPhone, PC e tablet.
       </p>
+      <p className="mt-3 text-[11px] opacity-60 text-center">
+        <a href="/privacy" className="underline hover:opacity-100">Privacy</a>
+        <span className="mx-2">·</span>
+        <a href="/cookie" className="underline hover:opacity-100">Cookie</a>
+      </p>
     </div>
   );
 }
