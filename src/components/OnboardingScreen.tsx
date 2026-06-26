@@ -205,6 +205,12 @@ export function OnboardingScreen({ userId, onDone, demoMode = false }: { userId:
     setSubmitErr(null);
     setSubmitting(true);
 
+    // Modalità demo (video tutorial): non scrivere nulla né in store né su cloud/localStorage.
+    if (demoMode) {
+      onDone();
+      return;
+    }
+
     // Parse e crea clienti / prodotti
     let createdClients = 0;
     let createdProducts = 0;
