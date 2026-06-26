@@ -37,7 +37,7 @@ const BUSINESS_TYPES = ["Gastronomia", "Caseificio", "Salumeria", "Alimentari", 
 const PRODUCTS_RANGES = ["Meno di 20", "20–50", "50–150", "Oltre 150"];
 const ORDER_CHANNELS = ["WhatsApp", "Telefono", "Sito", "Email", "Instagram/Facebook", "Di persona", "Altro"];
 
-export function OnboardingScreen({ userId, onDone }: { userId: string; onDone: () => void }) {
+export function OnboardingScreen({ userId, onDone, demoMode = false }: { userId: string; onDone: () => void; demoMode?: boolean }) {
   const { addClient, addProduct } = useStore();
   const runOcr = useServerFn(ocrExtract);
 
@@ -204,6 +204,12 @@ export function OnboardingScreen({ userId, onDone }: { userId: string; onDone: (
     setErrors({});
     setSubmitErr(null);
     setSubmitting(true);
+
+    // Modalità demo (video tutorial): non scrivere nulla né in store né su cloud/localStorage.
+    if (demoMode) {
+      onDone();
+      return;
+    }
 
     // Parse e crea clienti / prodotti
     let createdClients = 0;
