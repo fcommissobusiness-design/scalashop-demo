@@ -8,6 +8,7 @@ import { orderMargin, itemDisplayName, itemDisplayUnit, cartTotal } from "@/lib/
 import { WhatsAppDialog } from "@/components/WhatsAppDialog";
 import { makeTimeFrame, inFrame, TIME_FRAME_OPTIONS, type TimeFrameId } from "@/lib/timeframe";
 import { CartEditor } from "@/components/CartEditor";
+import { CartTotalMargin } from "@/components/CartTotalMargin";
 import { buildOrderComanda, printComanda } from "@/lib/comanda";
 import { CustomDateBox } from "@/components/CustomDateBox";
 import { useReceiptNumbers } from "@/lib/receipt-numbers";
