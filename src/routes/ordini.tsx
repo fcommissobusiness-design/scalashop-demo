@@ -502,10 +502,7 @@ export function OrderSheet({ mode, orderId, onClose, onSave }: {
       title={mode === "new" ? "Nuovo Ordine" : `Ordine · ${selectedClient?.name ?? existing?.clientNameInput ?? "—"}`}
       footer={
         <div className="flex items-center gap-3 flex-wrap">
-          <div className="flex-1 min-w-[140px]">
-            <p className="text-[10px] uppercase text-muted-foreground">Totale · margine</p>
-            <p className="font-display text-2xl text-brand-green leading-none">{formatEuro(total)} <span className="text-sm text-muted-foreground">· {formatEuro(margin)}</span></p>
-          </div>
+          <CartTotalMargin items={items} products={products} bundles={bundles} total={total} />
           <button onClick={handlePrintComanda}
             disabled={items.length === 0 || (!clientId && !((clientQ ?? "").trim()))}
             className="bg-card border border-border rounded-xl px-3 py-3 text-sm font-semibold disabled:opacity-40">🖨️ Stampa Comanda</button>
