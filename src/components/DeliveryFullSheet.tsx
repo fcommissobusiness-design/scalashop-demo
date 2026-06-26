@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useStore } from "@/lib/store";
 import { Sheet, Field, formatEuro } from "@/components/AppShell";
 import { CartEditor } from "@/components/CartEditor";
+import { CartTotalMargin } from "@/components/CartTotalMargin";
 import type { Delivery, DeliveryStatus, DeliveryPayment, OrderItem, OrderStatus, Order, PaymentMethod } from "@/lib/data";
 import { cartTotal } from "@/lib/metrics";
 import { buildDeliveryComanda, printComanda } from "@/lib/comanda";
@@ -196,10 +197,7 @@ export function DeliveryFullSheet({ mode, deliveryId, onClose }: {
       title={mode === "new" ? "Nuova consegna" : "Modifica consegna"}
       footer={
         <div className="flex items-center gap-3 flex-wrap">
-          <div className="flex-1 min-w-[120px]">
-            <p className="text-[10px] uppercase text-muted-foreground">Totale</p>
-            <p className="font-display text-2xl text-brand-green leading-none">{formatEuro(total)}</p>
-          </div>
+          <CartTotalMargin items={items} products={products} bundles={bundles} total={total} />
           <button onClick={handlePrint}
             disabled={!address.trim() || items.length === 0 || (!clientId && !((clientQ ?? "").trim()))}
             className="bg-card border border-border rounded-xl px-3 py-3 text-sm font-semibold disabled:opacity-40">🖨️ Stampa Comanda</button>
