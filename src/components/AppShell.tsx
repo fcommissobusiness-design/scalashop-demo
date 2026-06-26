@@ -220,6 +220,44 @@ function AuthScreen({ demoMode = false, onDemoDone }: { demoMode?: boolean; onDe
   );
 }
 
+function DemoAdminLogin() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setBusy(true); setErr(null);
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+      if (error) throw error;
+    } catch (e: any) {
+      setErr(e?.message ?? "Errore di accesso");
+    } finally { setBusy(false); }
+  };
+  return (
+    <form onSubmit={submit} className="w-full max-w-xs space-y-3 bg-brand-green-dark/40 p-5 rounded-2xl text-brand-cream">
+      <div>
+        <label className="text-[11px] uppercase tracking-wider opacity-80">Email admin</label>
+        <input type="email" autoComplete="email" required value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="w-full mt-1 px-3 py-2 rounded-lg bg-brand-cream text-brand-green outline-none" />
+      </div>
+      <div>
+        <label className="text-[11px] uppercase tracking-wider opacity-80">Password</label>
+        <input type="password" autoComplete="current-password" required value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className="w-full mt-1 px-3 py-2 rounded-lg bg-brand-cream text-brand-green outline-none" />
+      </div>
+      {err && <p className="text-xs text-red-300">{err}</p>}
+      <button disabled={busy} type="submit"
+        className="w-full py-2.5 rounded-lg bg-brand-gold text-brand-green font-semibold disabled:opacity-60">
+        {busy ? "…" : "Accedi come admin"}
+      </button>
+    </form>
+  );
+}
+
 export function AppShell({ children }: { children: ReactNode }) {
   const [userId, setUserId] = useState<string | null>(null);
   const [authReady, setAuthReady] = useState(false);
@@ -354,8 +392,37 @@ export function AppShell({ children }: { children: ReactNode }) {
     </div>
   );
   const isAdmin = isAdminAccount;
-  // Demo registrazione (solo admin, per video tutorial): mostra la schermata di registrazione
-  // senza toccare l'account reale; alla conferma si rientra nello stato corrente.
+  // Demo registrazione (per video tutorial): la modalità è ATTIVA finché il flag
+  // sessionStorage è presente. In modalità demo NON viene mai creato un account reale,
+  // anche se l'utente non è loggato come admin: in tal caso mostriamo prima un gate
+  // che chiede di accedere come admin, così la "registrazione" finta non crea nulla
+  // e alla fine si rientra nell'account admin esistente.
+  if (demoRegister && !isAdmin) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-brand-cream text-brand-green px-6 py-10">
+        <img src={logoAsset.url} alt="ScalaShop" className="h-20 md:h-24 object-contain mb-2" />
+        <div className="w-full max-w-sm bg-brand-green-dark/40 text-brand-cream p-5 rounded-2xl text-center mb-4">
+          <h2 className="font-display text-lg text-brand-gold mb-1">Modalità DEMO registrazione</h2>
+          <p className="text-xs opacity-90">
+            Per evitare di creare un account reale durante il video tutorial,
+            accedi prima con il tuo account admin. Dopo il login la demo
+            partirà automaticamente.
+          </p>
+        </div>
+        <DemoAdminLogin />
+        <button
+          type="button"
+          onClick={() => {
+            try { sessionStorage.removeItem("scalashop-demo-register"); } catch {}
+            setDemoRegister(false);
+          }}
+          className="mt-4 text-[11px] underline opacity-70 hover:opacity-100"
+        >
+          Annulla demo registrazione
+        </button>
+      </div>
+    );
+  }
   if (isAdmin && demoRegister) {
     if (demoStep === "register") {
       return (
