@@ -229,6 +229,19 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [moreOpen, setMoreOpen] = useState(false);
   const [onbTick, setOnbTick] = useState(0);
   const trackedSessionRef = useRef<string | null>(null);
+  const [demoRegister, setDemoRegister] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      const url = new URL(window.location.href);
+      if (url.searchParams.get("demo-register") === "1") {
+        sessionStorage.setItem("scalashop-demo-register", "1");
+        url.searchParams.delete("demo-register");
+        window.history.replaceState({}, "", url.toString());
+        return true;
+      }
+      return sessionStorage.getItem("scalashop-demo-register") === "1";
+    } catch { return false; }
+  });
 
   useEffect(() => {
     const h = () => setOnbTick(t => t + 1);
@@ -340,6 +353,19 @@ export function AppShell({ children }: { children: ReactNode }) {
     </div>
   );
   const isAdmin = isAdminAccount;
+  // Demo registrazione (solo admin, per video tutorial): mostra la schermata di registrazione
+  // senza toccare l'account reale; alla conferma si rientra nello stato corrente.
+  if (isAdmin && demoRegister) {
+    return (
+      <AuthScreen
+        demoMode
+        onDemoDone={() => {
+          try { sessionStorage.removeItem("scalashop-demo-register"); } catch {}
+          setDemoRegister(false);
+        }}
+      />
+    );
+  }
   if (!isAdmin && !hasCompletedOnboarding(effectiveUserId)) {
     return <OnboardingScreen userId={effectiveUserId} onDone={() => window.dispatchEvent(new Event("scalashop-onboarded"))} />;
   }
