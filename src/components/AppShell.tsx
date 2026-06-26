@@ -220,9 +220,46 @@ function AuthScreen({ demoMode = false, onDemoDone }: { demoMode?: boolean; onDe
   );
 }
 
+function DemoAdminLogin() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setBusy(true); setErr(null);
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+      if (error) throw error;
+    } catch (e: any) {
+      setErr(e?.message ?? "Errore di accesso");
+    } finally { setBusy(false); }
+  };
+  return (
+    <form onSubmit={submit} className="w-full max-w-xs space-y-3 bg-brand-green-dark/40 p-5 rounded-2xl text-brand-cream">
+      <div>
+        <label className="text-[11px] uppercase tracking-wider opacity-80">Email admin</label>
+        <input type="email" autoComplete="email" required value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="w-full mt-1 px-3 py-2 rounded-lg bg-brand-cream text-brand-green outline-none" />
+      </div>
+      <div>
+        <label className="text-[11px] uppercase tracking-wider opacity-80">Password</label>
+        <input type="password" autoComplete="current-password" required value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className="w-full mt-1 px-3 py-2 rounded-lg bg-brand-cream text-brand-green outline-none" />
+      </div>
+      {err && <p className="text-xs text-red-300">{err}</p>}
+      <button disabled={busy} type="submit"
+        className="w-full py-2.5 rounded-lg bg-brand-gold text-brand-green font-semibold disabled:opacity-60">
+        {busy ? "…" : "Accedi come admin"}
+      </button>
+    </form>
+  );
+}
+
 export function AppShell({ children }: { children: ReactNode }) {
   const [userId, setUserId] = useState<string | null>(null);
-  // Placeholder unused — DemoAdminLogin is defined below.
   const [authReady, setAuthReady] = useState(false);
   const [adminReady, setAdminReady] = useState(false);
   const [isAdminAccount, setIsAdminAccount] = useState(false);
