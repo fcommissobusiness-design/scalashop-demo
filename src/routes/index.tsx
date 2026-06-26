@@ -16,6 +16,7 @@ import { WhatsAppDialog } from "@/components/WhatsAppDialog";
 import { OrderSheet } from "@/routes/ordini";
 import { PaySheet } from "@/routes/pagamenti";
 import { CartEditor } from "@/components/CartEditor";
+import { CartTotalMargin } from "@/components/CartTotalMargin";
 import { DeliveryFullSheet } from "@/components/DeliveryFullSheet";
 import { buildSaleComanda, printComanda } from "@/lib/comanda";
 import type { SupplierPayment } from "@/lib/data";
@@ -556,10 +557,7 @@ export function NewSaleSheet({ open, saleId, onClose, onSave }: {
     <Sheet open={open} onClose={onClose} title={isEdit ? "Modifica scontrino" : "Nuovo scontrino"}
       footer={
         <div className="flex items-center gap-3 flex-wrap">
-          <div className="flex-1 min-w-[120px]">
-            <p className="text-[10px] uppercase text-muted-foreground">Totale</p>
-            <p className="font-display text-2xl text-brand-green leading-none">{formatEuro(total)}</p>
-          </div>
+          <CartTotalMargin items={items} products={products} bundles={bundles} total={total} />
           <button onClick={printPreview} disabled={items.length === 0}
             className="bg-card border border-border rounded-xl px-3 py-3 text-sm font-semibold disabled:opacity-40">🖨️ Stampa Comanda</button>
           {isEdit && (
