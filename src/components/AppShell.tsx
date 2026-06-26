@@ -56,7 +56,7 @@ const MOBILE_PRIMARY: NavItem[] = [
   { to: "/incassi", label: "Cassa", short: "Cassa" },
 ];
 
-function AuthScreen() {
+function AuthScreen({ demoMode = false, onDemoDone }: { demoMode?: boolean; onDemoDone?: () => void } = {}) {
   const [mode, setMode] = useState<"register" | "login" | "recover">("register");
   const [businessName, setBusinessName] = useState("");
   const [phone, setPhone] = useState("");
@@ -80,6 +80,12 @@ function AuthScreen() {
         if (!em) throw new Error("Inserisci la tua Email");
         if (!/^\S+@\S+\.\S+$/.test(em)) throw new Error("Email non valida");
         if (!password || password.length < 6) throw new Error("La password deve avere almeno 6 caratteri");
+
+        // Modalità demo (tutorial video): nessuna chiamata reale, torna all'account esistente.
+        if (demoMode) {
+          onDemoDone?.();
+          return;
+        }
 
         const { data, error } = await supabase.auth.signUp({
           email: em, password,
@@ -106,6 +112,7 @@ function AuthScreen() {
           console.error("notifyAdminRegistration failed", notifyErr);
         }
       } else if (mode === "login") {
+        if (demoMode) { onDemoDone?.(); return; }
         const em = email.trim();
         if (!em) throw new Error("Inserisci la tua Email");
         if (!password) throw new Error("Inserisci la Password");
