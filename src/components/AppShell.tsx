@@ -222,6 +222,7 @@ function AuthScreen({ demoMode = false, onDemoDone }: { demoMode?: boolean; onDe
 
 export function AppShell({ children }: { children: ReactNode }) {
   const [userId, setUserId] = useState<string | null>(null);
+  // Placeholder unused — DemoAdminLogin is defined below.
   const [authReady, setAuthReady] = useState(false);
   const [adminReady, setAdminReady] = useState(false);
   const [isAdminAccount, setIsAdminAccount] = useState(false);
