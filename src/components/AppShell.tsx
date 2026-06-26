@@ -242,6 +242,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       return sessionStorage.getItem("scalashop-demo-register") === "1";
     } catch { return false; }
   });
+  const [demoStep, setDemoStep] = useState<"register" | "onboarding">("register");
 
   useEffect(() => {
     const h = () => setOnbTick(t => t + 1);
@@ -356,11 +357,21 @@ export function AppShell({ children }: { children: ReactNode }) {
   // Demo registrazione (solo admin, per video tutorial): mostra la schermata di registrazione
   // senza toccare l'account reale; alla conferma si rientra nello stato corrente.
   if (isAdmin && demoRegister) {
+    if (demoStep === "register") {
+      return (
+        <AuthScreen
+          demoMode
+          onDemoDone={() => setDemoStep("onboarding")}
+        />
+      );
+    }
     return (
-      <AuthScreen
+      <OnboardingScreen
+        userId={effectiveUserId}
         demoMode
-        onDemoDone={() => {
+        onDone={() => {
           try { sessionStorage.removeItem("scalashop-demo-register"); } catch {}
+          setDemoStep("register");
           setDemoRegister(false);
         }}
       />
