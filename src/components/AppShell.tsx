@@ -56,7 +56,7 @@ const MOBILE_PRIMARY: NavItem[] = [
   { to: "/incassi", label: "Cassa", short: "Cassa" },
 ];
 
-function AuthScreen() {
+function AuthScreen({ demoMode = false, onDemoDone }: { demoMode?: boolean; onDemoDone?: () => void } = {}) {
   const [mode, setMode] = useState<"register" | "login" | "recover">("register");
   const [businessName, setBusinessName] = useState("");
   const [phone, setPhone] = useState("");
@@ -80,6 +80,12 @@ function AuthScreen() {
         if (!em) throw new Error("Inserisci la tua Email");
         if (!/^\S+@\S+\.\S+$/.test(em)) throw new Error("Email non valida");
         if (!password || password.length < 6) throw new Error("La password deve avere almeno 6 caratteri");
+
+        // Modalità demo (tutorial video): nessuna chiamata reale, torna all'account esistente.
+        if (demoMode) {
+          onDemoDone?.();
+          return;
+        }
 
         const { data, error } = await supabase.auth.signUp({
           email: em, password,
@@ -106,6 +112,7 @@ function AuthScreen() {
           console.error("notifyAdminRegistration failed", notifyErr);
         }
       } else if (mode === "login") {
+        if (demoMode) { onDemoDone?.(); return; }
         const em = email.trim();
         if (!em) throw new Error("Inserisci la tua Email");
         if (!password) throw new Error("Inserisci la Password");
@@ -222,6 +229,19 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [moreOpen, setMoreOpen] = useState(false);
   const [onbTick, setOnbTick] = useState(0);
   const trackedSessionRef = useRef<string | null>(null);
+  const [demoRegister, setDemoRegister] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      const url = new URL(window.location.href);
+      if (url.searchParams.get("demo-register") === "1") {
+        sessionStorage.setItem("scalashop-demo-register", "1");
+        url.searchParams.delete("demo-register");
+        window.history.replaceState({}, "", url.toString());
+        return true;
+      }
+      return sessionStorage.getItem("scalashop-demo-register") === "1";
+    } catch { return false; }
+  });
 
   useEffect(() => {
     const h = () => setOnbTick(t => t + 1);
@@ -333,6 +353,19 @@ export function AppShell({ children }: { children: ReactNode }) {
     </div>
   );
   const isAdmin = isAdminAccount;
+  // Demo registrazione (solo admin, per video tutorial): mostra la schermata di registrazione
+  // senza toccare l'account reale; alla conferma si rientra nello stato corrente.
+  if (isAdmin && demoRegister) {
+    return (
+      <AuthScreen
+        demoMode
+        onDemoDone={() => {
+          try { sessionStorage.removeItem("scalashop-demo-register"); } catch {}
+          setDemoRegister(false);
+        }}
+      />
+    );
+  }
   if (!isAdmin && !hasCompletedOnboarding(effectiveUserId)) {
     return <OnboardingScreen userId={effectiveUserId} onDone={() => window.dispatchEvent(new Event("scalashop-onboarded"))} />;
   }
