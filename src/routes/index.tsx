@@ -179,7 +179,7 @@ function Dashboard() {
         {/* RITIRI */}
         <section>
           <div className="flex justify-between items-center mb-3">
-            <h2 className="font-display text-xl text-brand-green">Ritiri ({ritiriFrame.length})</h2>
+            <h2 className="font-display text-xl text-brand-green">Ordini ({ritiriFrame.length})</h2>
             <Link to="/ordini" search={tfSearch} className="text-xs text-brand-gold font-semibold">Visualizza tutti gli ordini →</Link>
           </div>
           {ritiriFrame.length === 0 && (
