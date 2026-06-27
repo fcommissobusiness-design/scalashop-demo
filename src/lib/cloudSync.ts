@@ -11,6 +11,20 @@ const PROTECTED_TUTORIAL_USER_ID = "e7a93a94-878e-45de-97eb-5bae42052044";
 const hasContent = (store: any) =>
   ["products", "clients", "orders", "casualSales", "deliveries"].some((key) => Array.isArray(store?.[key]) && store[key].length > 0);
 const isBlankSnapshot = (store: any) => !hasContent(store);
+const normalizeProtectedTutorialSnapshot = (userId: string, store: any) => {
+  if (userId !== PROTECTED_TUTORIAL_USER_ID) return store;
+  if (!store || typeof store !== "object" || isBlankSnapshot(store)) return store;
+  return {
+    ...store,
+    __clientsSeedV2: true,
+    __cleanSeedV3: true,
+    __catalogV4: true,
+    __demoCleanV5: true,
+    __demoCleanV6: true,
+    __clientsImportV7: true,
+    __demoResetV8: true,
+  };
+};
 
 export type CloudSyncStatus = "idle" | "loading" | "ready" | "syncing" | "error" | "offline";
 
@@ -62,7 +76,7 @@ export function useCloudSync(userId: string | null) {
       pendingRef.current = false;
       updateStatus("syncing");
       try {
-        const snapshot = getStoreSnapshot();
+        const snapshot = normalizeProtectedTutorialSnapshot(userId, getStoreSnapshot());
         if (userId === PROTECTED_TUTORIAL_USER_ID && isBlankSnapshot(snapshot)) {
           console.warn("[cloudSync] blank snapshot blocked for protected tutorial account");
           updateStatus("ready");
@@ -115,7 +129,7 @@ export function useCloudSync(userId: string | null) {
         } else {
           versionRef.current = Number(data.version ?? 1);
           if (data.data && typeof data.data === "object") {
-            applyRemoteStore(data.data as any);
+            applyRemoteStore(normalizeProtectedTutorialSnapshot(userId, data.data) as any);
             // Se lo stato cloud è vecchio (es. import clienti/migrazioni locali),
             // dopo l'idratazione lo ripubblichiamo così anche gli altri device vedono i dati corretti.
             pendingRef.current = true;
@@ -168,7 +182,7 @@ export function useCloudSync(userId: string | null) {
           if (Number(row.version) <= versionRef.current) return;
           versionRef.current = Number(row.version);
           if (row.data && typeof row.data === "object") {
-            applyRemoteStore(row.data);
+            applyRemoteStore(normalizeProtectedTutorialSnapshot(userId, row.data));
           }
         },
       )
