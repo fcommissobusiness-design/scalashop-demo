@@ -152,7 +152,7 @@ function ConsegnePage() {
                 </div>
                 <p className="text-sm text-foreground/85 mt-1">{d.address}</p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {formatDate(d.date)} · {d.timeSlot} · {PAY_LABEL[d.payment]}
+                  {formatDate(d.date)}{d.timeSlot ? ` · ${d.timeSlot}` : ""} · {PAY_LABEL[d.payment]}
                   {o ? <> · <span className="font-semibold text-brand-green">{formatEuro(o.total)}</span></> : null}
                 </p>
                 {d.notes && <p className="text-xs italic text-muted-foreground mt-1">{d.notes}</p>}
