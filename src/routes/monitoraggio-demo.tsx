@@ -92,6 +92,19 @@ function MonitoraggioDemoPage() {
 
   useEffect(() => { if (adminReady && isAdmin) void load(); /* eslint-disable-next-line */ }, [adminReady, isAdmin]);
 
+  // Auto-refresh ogni 30s quando la tab è visibile (leggero: 1 chiamata
+  // ogni mezzo minuto, niente realtime). Si ferma quando la tab è in background.
+  useEffect(() => {
+    if (!adminReady || !isAdmin) return;
+    const id = setInterval(() => {
+      if (document.visibilityState === "visible") void load();
+    }, 30000);
+    const onVis = () => { if (document.visibilityState === "visible") void load(); };
+    document.addEventListener("visibilitychange", onVis);
+    return () => { clearInterval(id); document.removeEventListener("visibilitychange", onVis); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [adminReady, isAdmin]);
+
   const toggleSel = (id: string) => {
     setSelected(prev => {
       const n = new Set(prev);
