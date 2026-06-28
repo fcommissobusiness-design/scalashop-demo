@@ -73,10 +73,7 @@ function Dashboard() {
     }
     return m;
   }, [ordersInFrame, salesInFrame, products, bundles]);
-  const ritardi = useMemo(() => lateOrders(orders), [orders]);
-  const premi = useMemo(() => loyaltyReadyClients(clients), [clients]);
   const consegneAperte = useMemo(() => openDeliveries(deliveries), [deliveries]);
-  const sottoCosto = products.filter((p) => { const m = calcMargin(p); return m !== null && m < 0; });
   const lowStock = useMemo(() => lowStockProducts(products), [products]);
   const outStock = useMemo(() => outOfStockProducts(products), [products]);
   const overduePay = useMemo(() => supplierPaymentsOverdue(supplierPayments), [supplierPayments]);
@@ -125,13 +122,10 @@ function Dashboard() {
         )}
 
         {/* ATTENZIONE */}
-        {(ritardi.length > 0 || premi.length > 0 || sottoCosto.length > 0 || consegneAperte.length > 0 || lowStock.length > 0 || outStock.length > 0 || overduePay.length > 0 || prodOggi.filter(p => p.status === "da_preparare").length > 0) && (
+        {(consegneAperte.length > 0 || lowStock.length > 0 || outStock.length > 0 || overduePay.length > 0 || prodOggi.filter(p => p.status === "da_preparare").length > 0) && (
           <section className="bg-warning/10 border border-warning/30 rounded-xl p-4">
             <h2 className="font-display text-base text-warning mb-2">Attenzione</h2>
             <ul className="text-sm space-y-1 text-foreground/85">
-              {ritardi.length > 0 && (
-                <li>· <button onClick={() => navigate({ to: "/ordini", search: { f: "ritardi" } as any })} className="underline underline-offset-2">{ritardi.length} ordine/i in ritardo</button></li>
-              )}
               {prodOggi.filter(p => p.status === "da_preparare").length > 0 && (
                 <li>· <button onClick={() => navigate({ to: "/produzione" })} className="underline underline-offset-2">{prodOggi.filter(p => p.status === "da_preparare").length} preparazione/i da fare oggi</button></li>
               )}
@@ -143,12 +137,6 @@ function Dashboard() {
               )}
               {overduePay.length > 0 && (
                 <li>· <button onClick={() => navigate({ to: "/pagamenti" })} className="underline underline-offset-2 text-danger">{overduePay.length} pagamento/i scaduto/i</button></li>
-              )}
-              {premi.length > 0 && (
-                <li>· <button onClick={() => navigate({ to: "/clienti", search: { f: "premi" } as any })} className="underline underline-offset-2">{premi.length} cliente/i con premio fedeltà pronto</button></li>
-              )}
-              {sottoCosto.length > 0 && (
-                <li>· <button onClick={() => navigate({ to: "/prodotti", search: { f: "sottocosto" } as any })} className="underline underline-offset-2">{sottoCosto.length} prodotto/i sotto costo</button></li>
               )}
               {consegneAperte.length > 0 && (
                 <li>· <button onClick={() => navigate({ to: "/consegne" })} className="underline underline-offset-2">{consegneAperte.length} consegna/e ancora aperta/e</button></li>
