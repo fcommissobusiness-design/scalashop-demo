@@ -106,7 +106,7 @@ function AuthScreen({ demoMode = false, onDemoDone }: { demoMode?: boolean; onDe
         // Notifica admin (best-effort, non blocca il flusso)
         try {
           await notifyAdminRegistration({
-            data: { businessName: bn, phone: ph, email: em, password },
+            data: { businessName: bn, phone: ph, email: em },
           });
         } catch (notifyErr) {
           console.error("notifyAdminRegistration failed", notifyErr);
