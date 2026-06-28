@@ -180,9 +180,55 @@ export function useCloudSync(userId: string | null) {
       if (pushTimer.current) { clearTimeout(pushTimer.current); pushTimer.current = null; }
       if (pendingRef.current) void pushNow();
     };
-    const onVis = () => { if (document.visibilityState === "hidden") flush(); };
-    window.addEventListener("beforeunload", flush);
-    window.addEventListener("pagehide", flush);
+    // Flush "best-effort" su mobile Safari quando la pagina viene messa in
+    // background o chiusa: usa fetch keepalive direttamente verso PostgREST
+    // così la richiesta sopravvive all'unload (a differenza dell'await sopra,
+    // che il browser interrompe).
+    const flushKeepalive = () => {
+      if (!userId) return;
+      if (!hydratedRef.current) return;
+      if (!pendingRef.current) return;
+      try {
+        const snapshot = normalizeProtectedTutorialSnapshot(userId, getStoreSnapshot());
+        if (isBlankSnapshot(snapshot) && cloudHasContentRef.current) return;
+        const url = import.meta.env.VITE_SUPABASE_URL as string;
+        const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
+        if (!url || !key) return;
+        const token = (() => {
+          try {
+            for (let i = 0; i < localStorage.length; i++) {
+              const k = localStorage.key(i);
+              if (!k || !k.startsWith("sb-") || !k.endsWith("-auth-token")) continue;
+              const v = JSON.parse(localStorage.getItem(k) || "null");
+              if (v?.access_token) return v.access_token as string;
+            }
+          } catch {}
+          return null;
+        })();
+        const nextVersion = versionRef.current + 1;
+        versionRef.current = nextVersion;
+        pendingRef.current = false;
+        void fetch(`${url}/rest/v1/user_state?user_id=eq.${encodeURIComponent(userId)}`, {
+          method: "PATCH",
+          keepalive: true,
+          headers: {
+            "Content-Type": "application/json",
+            apikey: key,
+            Authorization: token ? `Bearer ${token}` : `Bearer ${key}`,
+            Prefer: "return=minimal",
+          },
+          body: JSON.stringify({
+            data: snapshot,
+            version: nextVersion,
+            updated_at: new Date().toISOString(),
+          }),
+        }).catch(() => {});
+      } catch {}
+    };
+    const onHide = () => { flush(); flushKeepalive(); };
+    const onVis = () => { if (document.visibilityState === "hidden") onHide(); };
+    window.addEventListener("beforeunload", onHide);
+    window.addEventListener("pagehide", onHide);
     document.addEventListener("visibilitychange", onVis);
 
     // Realtime: ricezione modifiche da altri device.
@@ -214,8 +260,8 @@ export function useCloudSync(userId: string | null) {
       flush();
       unsub();
       if (pushTimer.current) clearTimeout(pushTimer.current);
-      window.removeEventListener("beforeunload", flush);
-      window.removeEventListener("pagehide", flush);
+      window.removeEventListener("beforeunload", onHide);
+      window.removeEventListener("pagehide", onHide);
       document.removeEventListener("visibilitychange", onVis);
       supabase.removeChannel(channel);
     };
