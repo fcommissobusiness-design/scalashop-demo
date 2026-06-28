@@ -689,13 +689,14 @@ function GlobalTrialBanner({ userId }: { userId: string }) {
   const remaining = getTrialDaysLeft(userId);
   if (remaining <= 0) return null;
   return (
-    <div className="px-3 md:px-6 pt-2 md:pt-3">
+    <div className="px-3 md:px-6 pt-1 md:pt-3 -mt-1 md:mt-0">
       <div className="rounded-xl px-3 md:px-4 py-2 md:py-3 flex items-center justify-between gap-2 md:gap-3 shadow-sm"
            style={{ background: "linear-gradient(135deg, var(--brand-green), var(--brand-green-dark))" }}>
         <div className="text-brand-cream min-w-0">
           <p className="text-[9px] md:text-[10px] uppercase tracking-wider text-brand-gold font-bold leading-none">Demo gratuita ScalaShop</p>
           <p className="text-[11px] md:text-sm mt-0.5 md:mt-1 leading-snug truncate">
-            Ti restano <span className="text-brand-gold font-bold">{remaining} giorn{remaining === 1 ? "o" : "i"}</span> per testare il nuovo sistema operativo della tua attività.
+            Ti restano <span className="text-brand-gold font-bold">{remaining} giorn{remaining === 1 ? "o" : "i"}</span>
+            <span className="hidden md:inline"> per testare il nuovo sistema operativo della tua attività.</span>
           </p>
         </div>
         <a href={WA_URL} target="_blank" rel="noopener noreferrer"
