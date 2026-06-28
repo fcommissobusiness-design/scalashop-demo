@@ -272,14 +272,29 @@ export function AppShell({ children }: { children: ReactNode }) {
     try {
       const url = new URL(window.location.href);
       if (url.searchParams.get("demo-register") === "1") {
-        sessionStorage.setItem("scalashop-demo-register", "1");
         url.searchParams.delete("demo-register");
         window.history.replaceState({}, "", url.toString());
+        // Attiviamo il flag solo se ci sarà un check admin lato app
+        // (gestito sotto). Conserviamo l'intento in sessionStorage che
+        // verrà ripulito dal gate `!isAdmin && demoRegister` per non
+        // intrappolare utenti reali.
+        sessionStorage.setItem("scalashop-demo-register", "1");
         return true;
       }
       return sessionStorage.getItem("scalashop-demo-register") === "1";
     } catch { return false; }
   });
+
+  // Se l'utente NON è admin e ha (accidentalmente) il flag demo-register,
+  // ripulisci automaticamente per non bloccarlo sul gate.
+  useEffect(() => {
+    if (!userId) return;
+    if (!adminReady) return;
+    if (demoRegister && !isAdminAccount) {
+      try { sessionStorage.removeItem("scalashop-demo-register"); } catch {}
+      setDemoRegister(false);
+    }
+  }, [userId, adminReady, isAdminAccount, demoRegister]);
   const [demoStep, setDemoStep] = useState<"register" | "onboarding">("register");
 
   useEffect(() => {
