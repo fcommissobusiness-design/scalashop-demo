@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useStore } from "@/lib/store";
-import { patchDemoMeta } from "@/lib/store";
+import { patchDemoMeta, getDemoMeta } from "@/lib/store";
 import logoAsset from "@/assets/scalashop-logo.png.asset.json";
 import {
   parseClientsText, parseProductsText, toClient, toProduct, extractFromFile,
@@ -35,8 +35,7 @@ export function hasCompletedOnboarding(userId: string): boolean {
   // 2) Fallback cloud: se l'onboarding è stato fatto su un altro device
   //    è presente in __demoMeta.onboarding (sincronizzato via user_state).
   try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const meta = (require("@/lib/store") as typeof import("@/lib/store")).getDemoMeta();
+    const meta = getDemoMeta();
     if (meta?.onboarding?.completedAt) {
       // Materializziamo anche in locale per evitare future hit cloud.
       try { localStorage.setItem(`${ONB_KEY}:${userId}`, JSON.stringify(meta.onboarding)); } catch {}
