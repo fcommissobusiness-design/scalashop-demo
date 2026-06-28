@@ -2,12 +2,11 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useStore } from "@/lib/store";
 import { TopBar, formatEuro, formatTime, formatDate, Fab, Sheet, Field } from "@/components/AppShell";
-import { calcMargin, type CasualSale, type OrderItem, type OrderSource, type DeliveryMode, type PaymentMethod, type PaymentAttachment } from "@/lib/data";
+import { type CasualSale, type OrderItem, type OrderSource, type DeliveryMode, type PaymentMethod, type PaymentAttachment } from "@/lib/data";
 import { InvoiceField } from "@/components/InvoiceField";
 import { makeTimeFrame, inFrame, TIME_FRAME_OPTIONS, type TimeFrameId } from "@/lib/timeframe";
 import {
-  lateOrders,
-  loyaltyReadyClients, openDeliveries, orderMargin,
+  openDeliveries, orderMargin,
   lowStockProducts, outOfStockProducts, supplierPaymentsOverdue,
   productionsForDate, itemDisplayName, cartTotal,
 } from "@/lib/metrics";
