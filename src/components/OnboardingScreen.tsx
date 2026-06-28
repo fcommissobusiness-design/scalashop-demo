@@ -27,10 +27,23 @@ export type OnbData = {
 
 export function hasCompletedOnboarding(userId: string): boolean {
   if (typeof window === "undefined") return true;
+  // 1) Stato locale (rapido)
   try {
     const raw = localStorage.getItem(`${ONB_KEY}:${userId}`);
-    return !!raw && !!JSON.parse(raw)?.completedAt;
-  } catch { return false; }
+    if (raw && JSON.parse(raw)?.completedAt) return true;
+  } catch {}
+  // 2) Fallback cloud: se l'onboarding è stato fatto su un altro device
+  //    è presente in __demoMeta.onboarding (sincronizzato via user_state).
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const meta = (require("@/lib/store") as typeof import("@/lib/store")).getDemoMeta();
+    if (meta?.onboarding?.completedAt) {
+      // Materializziamo anche in locale per evitare future hit cloud.
+      try { localStorage.setItem(`${ONB_KEY}:${userId}`, JSON.stringify(meta.onboarding)); } catch {}
+      return true;
+    }
+  } catch {}
+  return false;
 }
 
 const BUSINESS_TYPES = ["Gastronomia", "Caseificio", "Salumeria", "Alimentari", "Bottega food", "Altro"];
