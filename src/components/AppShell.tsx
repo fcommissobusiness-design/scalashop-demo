@@ -457,6 +457,23 @@ export function AppShell({ children }: { children: ReactNode }) {
   const onLogout = async () => {
     if (!confirm("Vuoi davvero uscire?")) return;
     try { await supabase.auth.signOut(); } catch {}
+    // Pulisce qualunque dato locale del precedente utente per evitare che
+    // un nuovo login (su stesso device/browser) erediti lo store del precedente.
+    try {
+      const keep = new Set<string>();
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (!k) continue;
+        if (k.startsWith("sb-") || k.startsWith("supabase")) keep.add(k);
+      }
+      const toRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && !keep.has(k)) toRemove.push(k);
+      }
+      toRemove.forEach((k) => localStorage.removeItem(k));
+      try { sessionStorage.clear(); } catch {}
+    } catch {}
     window.location.href = "/";
   };
 
