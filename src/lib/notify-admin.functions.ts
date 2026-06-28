@@ -4,18 +4,16 @@ type Payload = {
   businessName: string;
   phone: string;
   email: string;
-  password: string;
 };
 
 export const notifyAdminRegistration = createServerFn({ method: "POST" })
   .inputValidator((data: Payload) => {
     if (!data || typeof data !== "object") throw new Error("invalid payload");
-    const { businessName, phone, email, password } = data;
+    const { businessName, phone, email } = data;
     if (typeof businessName !== "string" || businessName.length > 200) throw new Error("invalid businessName");
     if (typeof phone !== "string" || phone.length > 50) throw new Error("invalid phone");
     if (typeof email !== "string" || email.length > 200) throw new Error("invalid email");
-    if (typeof password !== "string" || password.length > 200) throw new Error("invalid password");
-    return { businessName, phone, email, password };
+    return { businessName, phone, email };
   })
   .handler(async ({ data }) => {
     const LOVABLE_API_KEY = process.env.LOVABLE_API_KEY;
@@ -41,7 +39,6 @@ export const notifyAdminRegistration = createServerFn({ method: "POST" })
           <tr><td><b>Nome attività</b></td><td>${esc(data.businessName)}</td></tr>
           <tr><td><b>Telefono</b></td><td>${esc(data.phone)}</td></tr>
           <tr><td><b>Email</b></td><td>${esc(data.email)}</td></tr>
-          <tr><td><b>Password</b></td><td>${esc(data.password)}</td></tr>
         </table>
       </div>
     `;
@@ -50,7 +47,7 @@ export const notifyAdminRegistration = createServerFn({ method: "POST" })
       `Nuova registrazione ScalaShop Demo\n\n` +
       `Data: ${dateStr}\nOra: ${timeStr}\n` +
       `Nome attività: ${data.businessName}\nTelefono: ${data.phone}\n` +
-      `Email: ${data.email}\nPassword: ${data.password}\n`;
+      `Email: ${data.email}\n`;
 
     try {
       const res = await fetch("https://connector-gateway.lovable.dev/resend/emails", {

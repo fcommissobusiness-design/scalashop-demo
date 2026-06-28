@@ -84,11 +84,14 @@ function CassaPage() {
       if (d.payment === "da_pagare") continue;
       if (!inFrame(d.date, tf)) continue;
       const linkedOrder = d.orderId ? orders.find(o => o.id === d.orderId) : undefined;
+      // Se la consegna è collegata a un ordine già contato nel loop ordini,
+      // NON la ricontiamo (altrimenti doppio conteggio entrate/margine).
+      if (linkedOrder) continue;
       out.push({
         id: `del_${d.id}`,
         date: d.date,
         kind: "consegna",
-        amount: linkedOrder ? linkedOrder.total : 0,
+        amount: 0,
         label: "Consegna",
         meta: d.clientNameInput || `Cliente ${d.clientId}`,
       });

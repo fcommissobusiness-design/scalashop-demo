@@ -106,7 +106,7 @@ function AuthScreen({ demoMode = false, onDemoDone }: { demoMode?: boolean; onDe
         // Notifica admin (best-effort, non blocca il flusso)
         try {
           await notifyAdminRegistration({
-            data: { businessName: bn, phone: ph, email: em, password },
+            data: { businessName: bn, phone: ph, email: em },
           });
         } catch (notifyErr) {
           console.error("notifyAdminRegistration failed", notifyErr);
@@ -272,14 +272,29 @@ export function AppShell({ children }: { children: ReactNode }) {
     try {
       const url = new URL(window.location.href);
       if (url.searchParams.get("demo-register") === "1") {
-        sessionStorage.setItem("scalashop-demo-register", "1");
         url.searchParams.delete("demo-register");
         window.history.replaceState({}, "", url.toString());
+        // Attiviamo il flag solo se ci sarà un check admin lato app
+        // (gestito sotto). Conserviamo l'intento in sessionStorage che
+        // verrà ripulito dal gate `!isAdmin && demoRegister` per non
+        // intrappolare utenti reali.
+        sessionStorage.setItem("scalashop-demo-register", "1");
         return true;
       }
       return sessionStorage.getItem("scalashop-demo-register") === "1";
     } catch { return false; }
   });
+
+  // Se l'utente NON è admin e ha (accidentalmente) il flag demo-register,
+  // ripulisci automaticamente per non bloccarlo sul gate.
+  useEffect(() => {
+    if (!userId) return;
+    if (!adminReady) return;
+    if (demoRegister && !isAdminAccount) {
+      try { sessionStorage.removeItem("scalashop-demo-register"); } catch {}
+      setDemoRegister(false);
+    }
+  }, [userId, adminReady, isAdminAccount, demoRegister]);
   const [demoStep, setDemoStep] = useState<"register" | "onboarding">("register");
 
   useEffect(() => {
@@ -457,6 +472,23 @@ export function AppShell({ children }: { children: ReactNode }) {
   const onLogout = async () => {
     if (!confirm("Vuoi davvero uscire?")) return;
     try { await supabase.auth.signOut(); } catch {}
+    // Pulisce qualunque dato locale del precedente utente per evitare che
+    // un nuovo login (su stesso device/browser) erediti lo store del precedente.
+    try {
+      const keep = new Set<string>();
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (!k) continue;
+        if (k.startsWith("sb-") || k.startsWith("supabase")) keep.add(k);
+      }
+      const toRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && !keep.has(k)) toRemove.push(k);
+      }
+      toRemove.forEach((k) => localStorage.removeItem(k));
+      try { sessionStorage.clear(); } catch {}
+    } catch {}
     window.location.href = "/";
   };
 
@@ -689,13 +721,14 @@ function GlobalTrialBanner({ userId }: { userId: string }) {
   const remaining = getTrialDaysLeft(userId);
   if (remaining <= 0) return null;
   return (
-    <div className="px-3 md:px-6 pt-2 md:pt-3">
+    <div className="px-3 md:px-6 pt-1 md:pt-3 -mt-1 md:mt-0">
       <div className="rounded-xl px-3 md:px-4 py-2 md:py-3 flex items-center justify-between gap-2 md:gap-3 shadow-sm"
            style={{ background: "linear-gradient(135deg, var(--brand-green), var(--brand-green-dark))" }}>
         <div className="text-brand-cream min-w-0">
           <p className="text-[9px] md:text-[10px] uppercase tracking-wider text-brand-gold font-bold leading-none">Demo gratuita ScalaShop</p>
           <p className="text-[11px] md:text-sm mt-0.5 md:mt-1 leading-snug truncate">
-            Ti restano <span className="text-brand-gold font-bold">{remaining} giorn{remaining === 1 ? "o" : "i"}</span> per testare il nuovo sistema operativo della tua attività.
+            Ti restano <span className="text-brand-gold font-bold">{remaining} giorn{remaining === 1 ? "o" : "i"}</span>
+            <span className="hidden md:inline"> per testare il nuovo sistema operativo della tua attività.</span>
           </p>
         </div>
         <a href={WA_URL} target="_blank" rel="noopener noreferrer"

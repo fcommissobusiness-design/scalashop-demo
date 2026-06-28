@@ -56,6 +56,13 @@ export function useCloudSync(userId: string | null) {
   const pushTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingRef = useRef<boolean>(false);
   const inFlightRef = useRef<boolean>(false);
+  // Tiene traccia se l'idratazione iniziale dal cloud è completata.
+  // Prima dell'idratazione NON dobbiamo mai pushare lo store locale, perché
+  // potrebbe essere vuoto/seed e sovrascriverebbe i dati cloud dell'utente.
+  const hydratedRef = useRef<boolean>(false);
+  // Conserva il payload del cloud quando esiste, per validare i push
+  // futuri ed evitare di sovrascrivere uno stato pieno con uno vuoto.
+  const cloudHasContentRef = useRef<boolean>(false);
 
   // helper combinato per stato locale + condiviso
   const updateStatus = (s: CloudSyncStatus) => { setStatus(s); setSharedStatus(s); };
@@ -66,10 +73,14 @@ export function useCloudSync(userId: string | null) {
       return;
     }
     let cancelled = false;
+    hydratedRef.current = false;
+    cloudHasContentRef.current = false;
     updateStatus("loading");
 
     const pushNow = async () => {
       if (!userId) return;
+      // Non pushare nulla finché l'idratazione iniziale non è completa.
+      if (!hydratedRef.current) return;
       if (!pendingRef.current) return;
       if (inFlightRef.current) return;
       inFlightRef.current = true;
@@ -77,12 +88,18 @@ export function useCloudSync(userId: string | null) {
       updateStatus("syncing");
       try {
         const snapshot = normalizeProtectedTutorialSnapshot(userId, getStoreSnapshot());
-        if (userId === PROTECTED_TUTORIAL_USER_ID && isBlankSnapshot(snapshot)) {
-          console.warn("[cloudSync] blank snapshot blocked for protected tutorial account");
+        // Protezione globale: non sovrascriviamo MAI un cloud non vuoto con
+        // uno snapshot locale vuoto. Vale per tutti gli utenti (non solo demo).
+        if (isBlankSnapshot(snapshot) && cloudHasContentRef.current) {
+          console.warn("[cloudSync] blank snapshot blocked (cloud has content)");
           updateStatus("ready");
           return;
         }
+        // Bumpiamo la versione PRIMA dell'await così l'evento realtime
+        // di ritorno (stessa versione che stiamo per scrivere) non
+        // ri-applica lo snapshot a noi stessi (echo loop).
         const nextVersion = versionRef.current + 1;
+        versionRef.current = nextVersion;
         const { error } = await supabase
           .from("user_state")
           .update({
@@ -92,7 +109,7 @@ export function useCloudSync(userId: string | null) {
           })
           .eq("user_id", userId);
         if (error) throw error;
-        versionRef.current = nextVersion;
+        if (hasContent(snapshot)) cloudHasContentRef.current = true;
         updateStatus("ready");
       } catch (e) {
         console.error("[cloudSync] push failed", e);
@@ -126,16 +143,19 @@ export function useCloudSync(userId: string | null) {
             .single();
           if (insErr) throw insErr;
           versionRef.current = ins?.version ?? 1;
+          if (hasContent(local)) cloudHasContentRef.current = true;
         } else {
           versionRef.current = Number(data.version ?? 1);
           if (data.data && typeof data.data === "object") {
             applyRemoteStore(normalizeProtectedTutorialSnapshot(userId, data.data) as any);
+            if (hasContent(data.data)) cloudHasContentRef.current = true;
             // Se lo stato cloud è vecchio (es. import clienti/migrazioni locali),
             // dopo l'idratazione lo ripubblichiamo così anche gli altri device vedono i dati corretti.
             pendingRef.current = true;
           }
         }
         if (cancelled) return;
+        hydratedRef.current = true;
         updateStatus("ready");
         if (pendingRef.current) void pushNow();
       } catch (e) {
@@ -183,6 +203,7 @@ export function useCloudSync(userId: string | null) {
           versionRef.current = Number(row.version);
           if (row.data && typeof row.data === "object") {
             applyRemoteStore(normalizeProtectedTutorialSnapshot(userId, row.data));
+            if (hasContent(row.data)) cloudHasContentRef.current = true;
           }
         },
       )
