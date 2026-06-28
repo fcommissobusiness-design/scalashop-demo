@@ -183,7 +183,12 @@ export function DeliveryFullSheet({ mode, deliveryId, onClose }: {
       title: "COMANDA · CONSEGNA",
       dateLabel: new Date(date).toLocaleString("it-IT"),
       client: { name: (clientQ ?? selectedClient?.name ?? "").trim() || undefined, phone: phone.trim() || undefined, address: address.trim() },
-      items: items.map((i) => ({ name: "", qty: i.qty })),
+      items: items.map((i) => {
+        const p = products.find((x) => x.id === i.productId);
+        const b = bundles.find((x) => x.id === i.productId);
+        const name = p?.name ?? b?.name ?? (i as any).customName ?? "Articolo";
+        return { name, qty: i.qty };
+      }),
       total,
     });
   };
