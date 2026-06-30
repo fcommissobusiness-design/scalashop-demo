@@ -9,6 +9,7 @@ import {
 } from "@tanstack/react-router";
 
 import appCss from "../styles.css?url";
+import scalashopIcon from "../assets/scalashop-icon.png.asset.json";
 
 function NotFoundComponent() {
   return (
@@ -81,14 +82,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:card", content: "summary" },
       { name: "twitter:title", content: "ScalaShop - Gestionale per Attivita' Retail" },
       { name: "twitter:description", content: "Gestisci ordini, clienti e prodotti per un negozio di alimentari artigianali." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/929c099d-2b21-47bf-ac31-34b6aaceefc4/id-preview-c4f2b918--3dab3e45-ebc8-4d12-8647-0552d1a5b0f0.lovable.app-1781462490535.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/929c099d-2b21-47bf-ac31-34b6aaceefc4/id-preview-c4f2b918--3dab3e45-ebc8-4d12-8647-0552d1a5b0f0.lovable.app-1781462490535.png" },
+      { property: "og:image", content: scalashopIcon.url },
+      { name: "twitter:image", content: scalashopIcon.url },
     ],
     links: [
       {
         rel: "stylesheet",
         href: appCss,
       },
+      { rel: "icon", type: "image/png", href: scalashopIcon.url },
+      { rel: "shortcut icon", type: "image/png", href: scalashopIcon.url },
+      { rel: "apple-touch-icon", href: scalashopIcon.url },
     ],
   }),
   shellComponent: RootShell,
