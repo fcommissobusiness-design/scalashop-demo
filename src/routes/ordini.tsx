@@ -572,6 +572,12 @@ export function OrderSheet({ mode, orderId, onClose, onSave }: {
             <p className="text-[10px] text-brand-gold mt-1">Salvando, questo numero diventerà il principale del cliente.</p>
           )}
         </Field>
+        <Field label="Tipologia ordine">
+          <select value={delivery} onChange={(e) => setDelivery(e.target.value as DeliveryMode)}
+            className="w-full bg-card border border-border rounded-lg p-3">
+            {(Object.keys(DELIVERY_LABEL) as DeliveryMode[]).map(d => <option key={d} value={d}>{DELIVERY_LABEL[d]}</option>)}
+          </select>
+        </Field>
         <Field label="Nome ordine (opz.)">
           <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="es. Festa compleanno"
             className="w-full bg-card border border-border rounded-lg p-3" />
@@ -584,12 +590,6 @@ export function OrderSheet({ mode, orderId, onClose, onSave }: {
           <select value={source} onChange={(e) => setSource(e.target.value as OrderSource)}
             className="w-full bg-card border border-border rounded-lg p-3">
             {SOURCE_OPTIONS.map(s => <option key={s} value={s}>{SOURCE_LABEL[s]}</option>)}
-          </select>
-        </Field>
-        <Field label="Delivery">
-          <select value={delivery} onChange={(e) => setDelivery(e.target.value as DeliveryMode)}
-            className="w-full bg-card border border-border rounded-lg p-3">
-            {(Object.keys(DELIVERY_LABEL) as DeliveryMode[]).map(d => <option key={d} value={d}>{DELIVERY_LABEL[d]}</option>)}
           </select>
         </Field>
         {delivery === "domicilio" && (
@@ -606,6 +606,11 @@ export function OrderSheet({ mode, orderId, onClose, onSave }: {
                   </select>
                 )}
               </div>
+            </Field>
+            <Field label="Fascia oraria consegna">
+              <input value={timeSlot} onChange={(e) => setTimeSlot(e.target.value)}
+                placeholder="es. 10:00-12:00"
+                className="w-full bg-card border border-border rounded-lg p-3" />
             </Field>
             <Field label="Pagamento">
               <select value={payment} onChange={(e) => setPayment(e.target.value as DeliveryPayment)}
