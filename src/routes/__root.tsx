@@ -73,6 +73,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { name: "theme-color", content: "#ffffff" },
+      { name: "mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-title", content: "ScalaShop" },
       { title: "ScalaShop - Gestionale per Attivita' Retail" },
       { name: "description", content: "Gestisci ordini, clienti e prodotti per un negozio di alimentari artigianali." },
       { name: "author", content: "ScalaShop" },
@@ -90,6 +94,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: appCss,
       },
+      { rel: "manifest", href: "/manifest.webmanifest" },
       { rel: "icon", type: "image/png", href: scalashopIcon.url },
       { rel: "shortcut icon", type: "image/png", href: scalashopIcon.url },
       { rel: "apple-touch-icon", href: scalashopIcon.url },

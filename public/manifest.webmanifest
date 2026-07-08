@@ -1,0 +1,23 @@
+{
+  "name": "ScalaShop",
+  "short_name": "ScalaShop",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "icons": [
+    {
+      "src": "https://scalashopdemo.lovable.app/__l5e/assets-v1/323d4dfb-cf89-42ed-8f1b-4aa171372c53/scalashop-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://scalashopdemo.lovable.app/__l5e/assets-v1/323d4dfb-cf89-42ed-8f1b-4aa171372c53/scalashop-icon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
