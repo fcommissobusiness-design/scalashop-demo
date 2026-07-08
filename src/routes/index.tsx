@@ -16,7 +16,6 @@ import { OrderSheet } from "@/routes/ordini";
 import { PaySheet } from "@/routes/pagamenti";
 import { CartEditor } from "@/components/CartEditor";
 import { CartTotalMargin } from "@/components/CartTotalMargin";
-import { DeliveryFullSheet } from "@/components/DeliveryFullSheet";
 import { buildSaleComanda, printComanda } from "@/lib/comanda";
 import type { SupplierPayment } from "@/lib/data";
 import { CustomDateBox } from "@/components/CustomDateBox";
@@ -37,8 +36,6 @@ function Dashboard() {
   const [editSaleId, setEditSaleId] = useState<string | null>(null);
   const [openOrder, setOpenOrder] = useState(false);
   const [openPay, setOpenPay] = useState(false);
-  const [openDeliv, setOpenDeliv] = useState(false);
-  const [editDelivId, setEditDelivId] = useState<string | null>(null);
   const [editOrderId, setEditOrderId] = useState<string | null>(null);
   const [pickAction, setPickAction] = useState(false);
   const [waOpen, setWaOpen] = useState<{ phone: string; clientId?: string; orderId?: string } | null>(null);
@@ -72,7 +69,6 @@ function Dashboard() {
     }
     return m;
   }, [ordersInFrame, salesInFrame, products, bundles]);
-  const consegneAperte = useMemo(() => openDeliveries(deliveries), [deliveries]);
   const lowStock = useMemo(() => lowStockProducts(products), [products]);
   const outStock = useMemo(() => outOfStockProducts(products), [products]);
   const overduePay = useMemo(() => supplierPaymentsOverdue(supplierPayments), [supplierPayments]);
@@ -88,7 +84,6 @@ function Dashboard() {
   const DASH_MAX = 5;
   const ritiriShown = ritiriFrame.slice(0, DASH_MAX);
   const salesShown = salesInFrame.slice(0, DASH_MAX);
-  const consegneShown = consegneAperte.slice(0, DASH_MAX);
   const tfSearch = { tf: tfId } as any;
 
   const clientById = (id: string) => clients.find((c) => c.id === id);
@@ -121,7 +116,7 @@ function Dashboard() {
         )}
 
         {/* ATTENZIONE */}
-        {(consegneAperte.length > 0 || lowStock.length > 0 || outStock.length > 0 || overduePay.length > 0 || prodOggi.filter(p => p.status === "da_preparare").length > 0) && (
+        {(lowStock.length > 0 || outStock.length > 0 || overduePay.length > 0 || prodOggi.filter(p => p.status === "da_preparare").length > 0) && (
           <section className="bg-warning/10 border border-warning/30 rounded-xl p-4">
             <h2 className="font-display text-base text-warning mb-2">Attenzione</h2>
             <ul className="text-sm space-y-1 text-foreground/85">
@@ -137,18 +132,14 @@ function Dashboard() {
               {overduePay.length > 0 && (
                 <li>· <button onClick={() => navigate({ to: "/pagamenti" })} className="underline underline-offset-2 text-danger">{overduePay.length} pagamento/i scaduto/i</button></li>
               )}
-              {consegneAperte.length > 0 && (
-                <li>· <button onClick={() => navigate({ to: "/consegne" })} className="underline underline-offset-2">{consegneAperte.length} consegna/e ancora aperta/e</button></li>
-              )}
             </ul>
           </section>
         )}
 
         {/* QUICK ACTIONS */}
-        <section className="grid grid-cols-3 gap-2">
+        <section className="grid grid-cols-2 gap-2">
           <Quick onClick={() => setOpenOrder(true)} label="Nuovo ordine" />
           <Quick onClick={() => setOpenSale(true)} label="Nuovo scontrino" />
-          <Quick onClick={() => setOpenDeliv(true)} label="Nuova consegna" />
         </section>
 
         {/* KPI CASSA */}
