@@ -262,44 +262,6 @@ function Dashboard() {
           )}
         </section>
 
-        {/* CONSEGNE */}
-        <section>
-          <div className="flex justify-between items-center mb-3">
-            <h2 className="font-display text-xl text-brand-green">Consegne ({consegneAperte.length})</h2>
-            <Link to="/consegne" className="text-xs text-brand-gold font-semibold">Visualizza tutte le consegne →</Link>
-          </div>
-          {consegneAperte.length === 0 && (
-            <div className="bg-card rounded-xl p-6 text-center text-sm text-muted-foreground border border-brand-green/25">Nessuna consegna aperta nel periodo.</div>
-          )}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {consegneShown.map((d) => {
-              const c = clientById(d.clientId);
-              const o = d.orderId ? orders.find(x => x.id === d.orderId) : null;
-              return (
-                <button key={d.id} type="button" onClick={() => setEditDelivId(d.id)}
-                  className="bg-card rounded-xl p-3 text-left text-sm shadow-sm touch-manipulation">
-                  <div className="flex justify-between">
-                    <span className="font-semibold">{c?.name ?? d.clientNameInput ?? "—"}</span>
-                    {o && <span className="text-brand-green font-bold">{formatEuro(o.total)}</span>}
-                  </div>
-                  <p className="text-xs text-muted-foreground">{formatDate(d.date)} · {d.timeSlot} · {d.status.replace(/_/g, " ")}</p>
-                  {receiptNums.label(d.id) && (
-                    <p className="text-[10px] uppercase tracking-wide text-brand-gold/80 font-semibold mt-0.5">{receiptNums.label(d.id)}</p>
-                  )}
-                  <p className="text-xs text-foreground/70 mt-1 truncate">{d.address}</p>
-                </button>
-              );
-            })}
-
-          </div>
-          {consegneAperte.length > DASH_MAX && (
-            <div className="text-center mt-2">
-              <Link to="/consegne" className="inline-block text-xs font-semibold text-brand-gold underline underline-offset-2">
-                Visualizza tutte le consegne ({consegneAperte.length}) →
-              </Link>
-            </div>
-          )}
-        </section>
       </div>
 
       <Fab onClick={() => setPickAction(true)} />
@@ -311,8 +273,6 @@ function Dashboard() {
               className="bg-brand-green text-brand-cream rounded-xl py-4 font-semibold border-2 border-brand-green shadow-sm hover:brightness-110 transition">Nuovo ordine</button>
             <button onClick={() => { setPickAction(false); setOpenSale(true); }}
               className="bg-brand-gold text-white rounded-xl py-4 font-semibold border-2 border-brand-gold shadow-sm hover:brightness-110 transition">Nuovo scontrino</button>
-            <button onClick={() => { setPickAction(false); setOpenDeliv(true); }}
-              className="bg-blue-600 text-white rounded-xl py-4 font-semibold border-2 border-blue-700 shadow-sm hover:brightness-110 transition">Nuova consegna</button>
             <button onClick={() => { setPickAction(false); openDemoLock("Nuovo Pagamento"); }}
               className="bg-danger text-white rounded-xl py-4 font-semibold border-2 border-danger shadow-sm hover:brightness-110 transition">Nuovo pagamento</button>
           </div>
@@ -332,14 +292,6 @@ function Dashboard() {
         <PaySheet mode="new" suppliers={suppliers}
           onClose={() => setOpenPay(false)}
           onSave={(d) => { addSupplierPayment(d as Omit<SupplierPayment, "id">); setOpenPay(false); }} />
-      )}
-
-      {openDeliv && (
-        <DeliveryFullSheet mode="new" onClose={() => setOpenDeliv(false)} />
-      )}
-
-      {editDelivId && (
-        <DeliveryFullSheet mode="edit" deliveryId={editDelivId} onClose={() => setEditDelivId(null)} />
       )}
 
       {openSale && (
