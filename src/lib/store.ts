@@ -476,7 +476,7 @@ export function useStore() {
           id: deliveryId, clientId: o.clientId,
           address: o.address || client?.deliveryZone || "",
           date: o.pickupDate,
-          timeSlot: "—",
+          timeSlot: o.timeSlot || "—",
           status: o.status === "consegnato" ? "consegnata"
                 : o.status === "annullato" ? "annullata"
                 : o.status === "da_consegnare" ? "in_consegna"
@@ -524,6 +524,7 @@ export function useStore() {
           if (patch.payment !== undefined && merged.payment) dPatch.payment = merged.payment;
           if (patch.pickupDate) dPatch.date = merged.pickupDate;
           if (patch.notes !== undefined) dPatch.notes = merged.notes;
+          if (patch.timeSlot !== undefined && merged.timeSlot) dPatch.timeSlot = merged.timeSlot;
           return { ...d, ...dPatch };
         });
       }

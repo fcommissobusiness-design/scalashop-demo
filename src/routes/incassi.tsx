@@ -7,7 +7,6 @@ import { orderMargin } from "@/lib/metrics";
 import { OrderSheet } from "@/routes/ordini";
 import { NewSaleSheet } from "@/routes/index";
 import { PaySheet } from "@/routes/pagamenti";
-import { DeliveryFullSheet } from "@/components/DeliveryFullSheet";
 import type { SupplierPayment } from "@/lib/data";
 import { CustomDateBox } from "@/components/CustomDateBox";
 import { PremiumBanner } from "@/components/DemoLock";
@@ -43,7 +42,6 @@ function CassaPage() {
   const [openSale, setOpenSale] = useState(false);
   const [editSaleId, setEditSaleId] = useState<string | null>(null);
   const [openPay, setOpenPay] = useState(false);
-  const [openDeliv, setOpenDeliv] = useState(false);
 
   // ============ Costruzione movimenti dal periodo ============
   const movements: Movement[] = useMemo(() => {
@@ -200,17 +198,15 @@ function CassaPage() {
 
       <Fab onClick={() => setPickerOpen(true)} />
 
-      {pickerOpen && !openOrder && !openSale && !openPay && !openDeliv && !editOrderId && !editSaleId && (
+      {pickerOpen && !openOrder && !openSale && !openPay && !editOrderId && !editSaleId && (
         <Sheet open={true} onClose={() => setPickerOpen(false)} title="Nuovo movimento">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <button onClick={() => setOpenOrder(true)}
               className="py-6 rounded-xl bg-brand-green text-brand-cream font-semibold">Nuovo Ordine</button>
             <button onClick={() => setOpenSale(true)}
               className="py-6 rounded-xl bg-brand-gold text-white font-semibold">Nuovo Scontrino</button>
             <button onClick={() => setOpenPay(true)}
               className="py-6 rounded-xl bg-danger text-white font-semibold">Nuovo Pagamento</button>
-            <button onClick={() => setOpenDeliv(true)}
-              className="py-6 rounded-xl bg-blue-600 text-white font-semibold">Nuova Consegna</button>
           </div>
         </Sheet>
       )}
@@ -241,10 +237,6 @@ function CassaPage() {
         <PaySheet mode="new" suppliers={suppliers}
           onClose={() => { setOpenPay(false); setPickerOpen(false); }}
           onSave={(d) => { addSupplierPayment(d as Omit<SupplierPayment, "id">); setOpenPay(false); setPickerOpen(false); }} />
-      )}
-
-      {openDeliv && (
-        <DeliveryFullSheet mode="new" onClose={() => { setOpenDeliv(false); setPickerOpen(false); }} />
       )}
     </div>
   );

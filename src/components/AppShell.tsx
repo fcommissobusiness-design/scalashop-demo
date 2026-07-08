@@ -18,7 +18,6 @@ const NAV_GROUPS: NavGroup[] = [
   { label: "Operativo", items: [
     { to: "/", label: "Dashboard", short: "Dashboard" },
     { to: "/ordini", label: "Ordini", short: "Ordini" },
-    { to: "/consegne", label: "Consegne", short: "Consegne" },
     { to: "/scontrini", label: "Scontrini", short: "Scontrini" },
     { to: "/clienti", label: "Clienti", short: "Clienti" },
     { to: "/offerte", label: "Offerte", short: "Offerte", locked: true },
@@ -52,7 +51,7 @@ const MOBILE_PRIMARY: NavItem[] = [
   { to: "/", label: "Dashboard", short: "Dashboard" },
   { to: "/ordini", label: "Ordini", short: "Ordini" },
   { to: "/scontrini", label: "Scontrini", short: "Scontrini" },
-  { to: "/consegne", label: "Consegne", short: "Consegne" },
+  { to: "/prodotti", label: "Prodotti", short: "Prodotti" },
   { to: "/incassi", label: "Cassa", short: "Cassa" },
 ];
 

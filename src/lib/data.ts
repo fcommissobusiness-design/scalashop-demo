@@ -140,6 +140,8 @@ export interface Order {
   deliveryId?: string;
   hasInvoice?: boolean;
   invoice?: PaymentAttachment;
+  /** Fascia oraria di consegna (solo se delivery = domicilio). */
+  timeSlot?: string;
 }
 
 
