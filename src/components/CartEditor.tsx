@@ -5,7 +5,7 @@ import type { OrderItem, Product, Bundle } from "@/lib/data";
 import { QtyInput } from "@/components/QtyInput";
 import { formatEuro } from "@/components/AppShell";
 import {
-  itemKind, itemDisplayName, itemUnitPrice, itemUnitCost, itemLineTotal,
+  itemKind, itemDisplayName, itemLineTotal,
 } from "@/lib/metrics";
 import { DemoLockOverlay } from "@/components/DemoLock";
 
