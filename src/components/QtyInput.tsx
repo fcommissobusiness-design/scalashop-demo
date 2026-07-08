@@ -81,8 +81,7 @@ function parseLocale(s: string): number {
   if (!s) return 0;
   return parseFloat(s.replace(",", "."));
 }
-function formatVal(n: number, step: number): string {
-  if (step >= 1) return String(Math.round(n));
-  // strip trailing zeros, italian comma
+function formatVal(n: number, _step: number): string {
+  // Mostra sempre fino a 3 decimali (senza zeri finali), virgola italiana.
   return (+n.toFixed(3)).toString().replace(".", ",");
 }
