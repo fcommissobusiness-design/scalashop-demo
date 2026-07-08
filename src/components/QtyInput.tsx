@@ -28,7 +28,9 @@ export function QtyInput({
   const commit = (raw: string) => {
     const n = parseLocale(raw);
     if (isNaN(n) || n < 0) return;
-    onChange(+n.toFixed(step < 1 ? 3 : 0));
+    // Consenti sempre fino a 3 decimali (anche per unità "pezzo"), così
+    // 1,3 pezzi diventano 1 pezzo + 0,3 di pezzo (proporzionale).
+    onChange(+n.toFixed(3));
   };
 
   return (
@@ -54,7 +56,7 @@ export function QtyInput({
           if (v === "") onChange(0);
           else {
             const n = parseLocale(v);
-            if (!isNaN(n) && n >= 0) onChange(+n.toFixed(step < 1 ? 3 : 0));
+            if (!isNaN(n) && n >= 0) onChange(+n.toFixed(3));
           }
         }}
         onBlur={(e) => commit(e.target.value)}
