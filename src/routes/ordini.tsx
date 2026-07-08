@@ -347,6 +347,7 @@ export function OrderSheet({ mode, orderId, onClose, onSave }: {
   const [source, setSource] = useState<OrderSource>(initialSource);
   const [delivery, setDelivery] = useState<DeliveryMode>(existing?.delivery ?? "ritiro");
   const [address, setAddress] = useState(existing?.address ?? "");
+  const [timeSlot, setTimeSlot] = useState<string>(existing?.timeSlot ?? "10:00-12:00");
   const [payment, setPayment] = useState<DeliveryPayment>(existing?.payment ?? "da_pagare");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(existing?.paymentMethod ?? "contanti");
   const [hasInvoice, setHasInvoice] = useState<boolean>(existing?.hasInvoice ?? false);
@@ -454,6 +455,7 @@ export function OrderSheet({ mode, orderId, onClose, onSave }: {
       status, total, notes: notes.trim() || undefined, source, delivery,
       address: delivery === "domicilio" ? address.trim() || undefined : undefined,
       payment: delivery === "domicilio" ? payment : undefined,
+      timeSlot: delivery === "domicilio" ? (timeSlot.trim() || undefined) : undefined,
       paymentMethod,
       hasInvoice, invoice: hasInvoice ? invoice : undefined,
     };
