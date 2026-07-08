@@ -1,12 +1,12 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useStore } from "@/lib/store";
-import { TopBar, formatEuro, formatTime, formatDate, Fab, Sheet, Field } from "@/components/AppShell";
+import { TopBar, formatEuro, formatTime, Fab, Sheet, Field } from "@/components/AppShell";
 import { type CasualSale, type OrderItem, type OrderSource, type DeliveryMode, type PaymentMethod, type PaymentAttachment } from "@/lib/data";
 import { InvoiceField } from "@/components/InvoiceField";
 import { makeTimeFrame, inFrame, TIME_FRAME_OPTIONS, type TimeFrameId } from "@/lib/timeframe";
 import {
-  openDeliveries, orderMargin,
+  orderMargin,
   lowStockProducts, outOfStockProducts, supplierPaymentsOverdue,
   productionsForDate, itemDisplayName, cartTotal,
 } from "@/lib/metrics";
@@ -25,7 +25,7 @@ import { useReceiptNumbers } from "@/lib/receipt-numbers";
 export const Route = createFileRoute("/")({ component: Dashboard });
 
 function Dashboard() {
-  const { orders, products, bundles, clients, casualSales, deliveries, supplierPayments, suppliers, productions, updateOrder, addCasualSale, addClient, addOrder, addSupplierPayment } = useStore();
+  const { orders, products, bundles, clients, casualSales, supplierPayments, suppliers, productions, updateOrder, addCasualSale, addClient, addOrder, addSupplierPayment } = useStore();
   const receiptNums = useReceiptNumbers();
   const todayIso = new Date().toISOString().slice(0, 10);
   const [tfId, setTfId] = useState<TimeFrameId>("today");
