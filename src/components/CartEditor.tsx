@@ -118,11 +118,6 @@ export function CartEditor({ items, onChange }: Props) {
               products={products}
               bundles={bundles}
               onQtyChange={(q) => updateRow(idx, { qty: q })}
-              onPriceChange={(p) => {
-                const k = itemKind(it);
-                if (k === "custom") updateRow(idx, { customPrice: p });
-                else updateRow(idx, { unitPriceOverride: p });
-              }}
               onLineTotalChange={(t) => {
                 const q = Math.max(0.0001, it.qty || 1);
                 const newUnit = +(t / q).toFixed(2);
@@ -237,18 +232,16 @@ export function CartEditor({ items, onChange }: Props) {
 }
 
 function CartRow({
-  item, products, bundles, onQtyChange, onPriceChange, onLineTotalChange, onRemove,
+  item, products, bundles, onQtyChange, onLineTotalChange, onRemove,
 }: {
   item: OrderItem;
   products: Product[];
   bundles: Bundle[];
   onQtyChange: (qty: number) => void;
-  onPriceChange: (price: number) => void;
   onLineTotalChange: (total: number) => void;
   onRemove: () => void;
 }) {
   const name = itemDisplayName(item, products, bundles);
-  const unitPrice = itemUnitPrice(item, products, bundles);
   const total = itemLineTotal(item, products, bundles);
   const kind = itemKind(item);
   const p = kind === "product" ? products.find((x) => x.id === item.productId) : undefined;
@@ -263,11 +256,8 @@ function CartRow({
       <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border ${badge}`}>{badgeLabel}</span>
       <div className="flex-1 min-w-0">
         <p className="text-sm truncate">{name}</p>
-        <div className="text-[11px] text-muted-foreground flex items-center gap-1 flex-wrap">
-          <span>unit. €</span>
-          <PriceInput value={unitPrice} onChange={onPriceChange} />
-          <span>{p?.unit ? `/${p.unit}` : ""}</span>
-          <span>· tot. €</span>
+        <div className="text-[11px] text-muted-foreground flex items-center gap-1 flex-wrap mt-0.5">
+          <span>Totale prodotto €</span>
           <PriceInput value={total} onChange={onLineTotalChange} />
         </div>
       </div>
