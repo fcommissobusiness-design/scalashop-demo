@@ -376,7 +376,7 @@ export function OnboardingScreen({ userId, onDone, demoMode = false }: { userId:
 
         <button type="submit" disabled={submitting}
           className="w-full py-3.5 rounded-xl bg-brand-gold text-white font-semibold text-base shadow-sm hover:brightness-105 disabled:opacity-50 disabled:cursor-not-allowed transition">
-          {submitting ? "Configurazione in corso…" : "Inizia la demo"}
+          {submitting ? "Configurazione in corso…" : "Entra in ScalaShop"}
         </button>
         {submitErr && (
           <p className="text-sm font-semibold text-red-600 text-center -mt-3">{submitErr}</p>

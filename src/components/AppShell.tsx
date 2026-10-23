@@ -155,7 +155,7 @@ function AuthScreen({ demoMode = false, onDemoDone }: { demoMode?: boolean; onDe
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-brand-cream text-brand-green px-6 py-10">
       <img src={logoAsset.url} alt="ScalaShop" className="h-20 md:h-24 object-contain mb-2" />
-      <p className="text-sm text-muted-foreground mb-4 text-center max-w-xs">Gestionale per gastronomie e botteghe alimentari. Testalo gratuitamente per 14 giorni.</p>
+      <p className="text-sm text-muted-foreground mb-4 text-center max-w-xs">Gestionale per gastronomie e botteghe alimentari. Inizia subito, gratis.</p>
       <div className="flex bg-brand-green-dark/10 rounded-full p-1 mb-4 text-xs font-semibold">
         <button type="button" onClick={() => setMode("register")}
           className={`px-4 py-1.5 rounded-full transition ${mode === "register" ? "bg-brand-green text-brand-cream" : "text-brand-green/70"}`}>Registrati</button>
@@ -465,7 +465,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const isActive = (to: string) => to === "/" ? path === "/" : path.startsWith(to);
 
   const locked = isLockedPath(path);
-  const businessName = getBusinessName(effectiveUserId) || (isAdmin ? "Demo ScalaShop" : "");
+  const businessName = getBusinessName(effectiveUserId) || (isAdmin ? "ScalaShop" : "");
   const trialExpired = !isAdmin && isTrialExpired(effectiveUserId);
 
   const onLogout = async () => {
@@ -528,7 +528,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               <p className="text-[10px] uppercase tracking-wider text-brand-cream/50 px-3 mb-1">Amministrazione</p>
               <Link to="/monitoraggio-demo"
                 className={`px-3 py-2 rounded-lg text-sm font-semibold flex items-center justify-between gap-2 ${isActive("/monitoraggio-demo") ? "bg-brand-gold/20 text-brand-gold" : "text-brand-cream/90 hover:bg-brand-cream/5"}`}>
-                <span>Monitoraggio Demo</span>
+                <span>Monitoraggio</span>
                 <span className="text-[10px]">👑</span>
               </Link>
             </div>
@@ -603,7 +603,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                   <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1.5">Amministrazione</p>
                   <Link to="/monitoraggio-demo" onClick={() => setMoreOpen(false)}
                     className="px-3 py-2.5 rounded-lg text-sm font-semibold bg-brand-gold/15 text-brand-green flex items-center justify-between">
-                    <span>Monitoraggio Demo</span><span>👑</span>
+                    <span>Monitoraggio</span><span>👑</span>
                   </Link>
                 </div>
               )}
@@ -654,7 +654,7 @@ function LockedOverlayWrapper({ children }: { children: ReactNode }) {
 
 /** Pulsante flottante "Richiedi Assistenza" sempre visibile, apre WhatsApp. */
 function SupportButton() {
-  const supportUrl = `${WA_URL}?text=${encodeURIComponent("Ciao, ho bisogno di assistenza per la demo di ScalaShop")}`;
+  const supportUrl = `${WA_URL}?text=${encodeURIComponent("Ciao, ho bisogno di assistenza per ScalaShop")}`;
   return (
     <a
       href={supportUrl}
@@ -718,7 +718,8 @@ function SyncBadge() {
 /** Banner trial globale: appare subito sotto la barra dinamica su ogni scheda. */
 function GlobalTrialBanner({ userId }: { userId: string }) {
   const remaining = getTrialDaysLeft(userId);
-  if (remaining <= 0) return null;
+  // Uso illimitato: il banner di countdown non viene mai mostrato.
+  if (remaining >= 0) return null;
   return (
     <div className="px-3 md:px-6 pt-1 md:pt-3 -mt-1 md:mt-0">
       <div className="rounded-xl px-3 md:px-4 py-2 md:py-3 flex items-center justify-between gap-2 md:gap-3 shadow-sm"

@@ -57,7 +57,7 @@ export function InvoiceField({
             <span className="inline-flex items-center gap-2">
               <span className="text-brand-gold">🔒</span>
               <span>
-                <span className="font-semibold text-brand-green">Funzionalità non disponibile nella demo</span>
+                <span className="font-semibold text-brand-green">Funzionalità non disponibile in questa versione</span>
                 <span className="block text-xs text-muted-foreground">Per caricare la fattura attiva il piano a pagamento di ScalaShop.</span>
               </span>
             </span>

@@ -1,8 +1,8 @@
 const PHRASES = [
-  "14 giorni di demo gratuita del sistema ScalaShop",
+  "ScalaShop, il gestionale della tua bottega",
   "Attiva ora il piano a pagamento",
   "Porta un amico e sblocca un coupon",
-  "Per te il 20% di sconto sull'attivazione del piano — fino al 31/07/2026",
+  "Per te uno sconto sull'attivazione del piano a pagamento",
 ];
 
 export function PromoMarquee() {
