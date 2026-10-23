@@ -89,8 +89,7 @@ export function getTrialDaysLeft(userId: string): number {
   return Math.max(0, TRIAL_DAYS - elapsedDays);
 }
 
-export function isTrialExpired(userId: string): boolean {
-  const start = getTrialStart(userId);
-  if (!start) return false;
-  return Date.now() - start > TRIAL_DAYS * 86400000;
+export function isTrialExpired(_userId: string): boolean {
+  // Uso illimitato: nessun limite di tempo. Le sezioni Pro restano bloccate come upsell.
+  return false;
 }
