@@ -597,30 +597,16 @@ export function NewSaleSheet({ open, saleId, onClose, onSave }: {
   );
 }
 
-/* Banner trial demo 14 giorni + CTA placeholder — colori palette ScalaShop */
-import { getTrialDaysLeft } from "@/lib/demo-flags";
-import { supabase } from "@/integrations/supabase/client";
+/* Banner upsell ScalaShop (uso gratis + CTA al piano a pagamento) */
 import { WA_URL } from "@/lib/wa";
 function TrialBanner() {
-  // Calcola l'userId effettivo per leggere completedAt da localStorage onboarding.
-  const [userId, setUserId] = useState<string>("demo-anon");
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setUserId(data.session?.user?.id ?? "demo-anon");
-    });
-  }, []);
-  const remaining = getTrialDaysLeft(userId);
   return (
     <div className="rounded-2xl p-5 md:p-6 flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-md"
          style={{ background: "linear-gradient(135deg, var(--brand-green), var(--brand-green-dark))" }}>
       <div className="text-brand-cream">
-        <p className="text-[11px] uppercase tracking-wider text-brand-gold font-bold">Demo gratuita ScalaShop</p>
+        <p className="text-[11px] uppercase tracking-wider text-brand-gold font-bold">ScalaShop</p>
         <p className="font-display text-lg md:text-xl mt-1 leading-tight">
-          {remaining > 0 ? (
-            <>Ti restano <span className="text-brand-gold">{remaining} giorn{remaining === 1 ? "o" : "i"}</span> per testare il nuovo sistema operativo della tua attività.</>
-          ) : (
-            <>Demo terminata. <span className="text-brand-gold">Attiva il piano a pagamento</span> per continuare.</>
-          )}
+          Stai usando ScalaShop gratis. <span className="text-brand-gold">Attiva il piano a pagamento</span> per sbloccare tutte le sezioni.
         </p>
       </div>
       <a href={WA_URL} target="_blank" rel="noopener noreferrer"

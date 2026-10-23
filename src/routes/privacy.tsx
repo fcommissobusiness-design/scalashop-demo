@@ -7,9 +7,9 @@ export const Route = createFileRoute("/privacy")({
       { name: "description", content: "Informativa sulla privacy di ScalaShop ai sensi del GDPR." },
       { property: "og:title", content: "Privacy Policy — ScalaShop" },
       { property: "og:description", content: "Informativa sulla privacy di ScalaShop ai sensi del GDPR." },
-      { property: "og:url", content: "https://scalashopdemo.lovable.app/privacy" },
+      { property: "og:url", content: "https://app.scalashopgestionale.it/privacy" },
     ],
-    links: [{ rel: "canonical", href: "https://scalashopdemo.lovable.app/privacy" }],
+    links: [{ rel: "canonical", href: "https://app.scalashopgestionale.it/privacy" }],
   }),
   component: PrivacyPage,
 });

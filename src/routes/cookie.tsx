@@ -7,9 +7,9 @@ export const Route = createFileRoute("/cookie")({
       { name: "description", content: "Informativa sui cookie utilizzati da ScalaShop." },
       { property: "og:title", content: "Cookie Policy — ScalaShop" },
       { property: "og:description", content: "Informativa sui cookie utilizzati da ScalaShop." },
-      { property: "og:url", content: "https://scalashopdemo.lovable.app/cookie" },
+      { property: "og:url", content: "https://app.scalashopgestionale.it/cookie" },
     ],
-    links: [{ rel: "canonical", href: "https://scalashopdemo.lovable.app/cookie" }],
+    links: [{ rel: "canonical", href: "https://app.scalashopgestionale.it/cookie" }],
   }),
   component: CookiePage,
 });
