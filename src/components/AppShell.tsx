@@ -492,31 +492,33 @@ export function AppShell({ children }: { children: ReactNode }) {
   };
 
   return (
-    <div className="min-h-screen bg-brand-cream md:flex">
-      {/* Barra promozionale: nasconde su mobile sopra topbar fissa? La teniamo sopra a tutta la pagina. */}
-      {/* Sidebar desktop */}
-      <aside className="hidden md:flex md:flex-col w-60 bg-brand-green text-brand-cream sticky top-0 h-screen p-4 z-40 overflow-y-auto">
-        <div className="px-2 py-3 mb-4 border-b border-brand-cream/10 flex items-center gap-2">
-          <img src={logoAsset.url} alt="" className="h-9 w-9 object-contain rounded bg-white p-0.5" />
-          <div>
-            <h1 className="font-display text-xl text-brand-gold leading-none">ScalaShop</h1>
-            <p className="text-[10px] opacity-80 mt-0.5 truncate max-w-[10rem]">
+    <div className="min-h-screen bg-paper md:flex">
+      {/* Sidebar desktop premium */}
+      <aside className="hidden md:flex md:flex-col w-64 bg-sidebar-premium text-brand-cream sticky top-0 h-screen p-4 z-40 overflow-y-auto border-r border-white/5">
+        <div className="px-2 py-4 mb-5 border-b border-white/10 flex items-center gap-3">
+          <div className="h-10 w-10 rounded-xl bg-white/95 shadow-md shadow-black/20 flex items-center justify-center p-1">
+            <img src={logoAsset.url} alt="" className="h-full w-full object-contain" />
+          </div>
+          <div className="min-w-0">
+            <h1 className="font-display text-xl text-brand-gold leading-none tracking-tight">ScalaShop</h1>
+            <p className="text-[10px] opacity-70 mt-1 truncate max-w-[10rem] uppercase tracking-wider">
               {businessName || "La tua attività"}
             </p>
           </div>
         </div>
-        <nav className="flex flex-col gap-3">
+        <nav className="flex flex-col gap-5">
           {NAV_GROUPS.map((g) => (
             <div key={g.label}>
-              <p className="text-[10px] uppercase tracking-wider text-brand-cream/50 px-3 mb-1">{g.label}</p>
+              <p className="text-[10px] uppercase tracking-[0.18em] text-white/40 font-semibold px-3 mb-2">{g.label}</p>
               <div className="flex flex-col gap-0.5">
                 {g.items.map((n) => {
                   const active = isActive(n.to);
                   return (
                     <Link key={`${g.label}-${n.to}`} to={n.to}
-                      className={`px-3 py-2 rounded-lg text-sm font-medium flex items-center justify-between gap-2 ${active ? "bg-brand-gold/20 text-brand-gold" : "text-brand-cream/80 hover:bg-brand-cream/5"} ${n.locked ? "opacity-70" : ""}`}>
+                      data-active={active ? "true" : "false"}
+                      className={`nav-link ${n.locked ? "opacity-70" : ""}`}>
                       <span>{n.label}</span>
-                      {n.locked && <span title="Disponibile con il piano a pagamento" className="text-[10px] leading-none">🔒</span>}
+                      {n.locked && <span title="Disponibile con il piano a pagamento" className="text-[10px] leading-none opacity-80">🔒</span>}
                     </Link>
                   );
                 })}
@@ -525,19 +527,21 @@ export function AppShell({ children }: { children: ReactNode }) {
           ))}
           {isAdmin && (
             <div>
-              <p className="text-[10px] uppercase tracking-wider text-brand-cream/50 px-3 mb-1">Amministrazione</p>
+              <p className="text-[10px] uppercase tracking-[0.18em] text-white/40 font-semibold px-3 mb-2">Amministrazione</p>
               <Link to="/monitoraggio-demo"
-                className={`px-3 py-2 rounded-lg text-sm font-semibold flex items-center justify-between gap-2 ${isActive("/monitoraggio-demo") ? "bg-brand-gold/20 text-brand-gold" : "text-brand-cream/90 hover:bg-brand-cream/5"}`}>
+                data-active={isActive("/monitoraggio-demo") ? "true" : "false"}
+                className="nav-link">
                 <span>Monitoraggio</span>
                 <span className="text-[10px]">👑</span>
               </Link>
             </div>
           )}
-          <div className="mt-2 pt-3 border-t border-brand-cream/10">
-            <p className="text-[10px] uppercase tracking-wider text-brand-cream/50 px-3 mb-1">Account</p>
+          <div className="mt-auto pt-5 border-t border-white/10">
+            <p className="text-[10px] uppercase tracking-[0.18em] text-white/40 font-semibold px-3 mb-2">Account</p>
             <button onClick={onLogout}
-              className="w-full px-3 py-2 rounded-lg text-sm font-medium text-brand-cream/80 hover:bg-brand-cream/5 text-left flex items-center gap-2">
-              <span aria-hidden>⎋</span> Logout
+              className="nav-link w-full text-left">
+              <span>Logout</span>
+              <span aria-hidden className="text-[11px] opacity-80">⎋</span>
             </button>
           </div>
         </nav>
@@ -548,8 +552,9 @@ export function AppShell({ children }: { children: ReactNode }) {
         <PromoMarquee />
         <GlobalTrialBanner userId={effectiveUserId} />
         {businessName && (
-          <div className="hidden md:flex justify-end px-6 pt-3 -mb-1">
-            <span className="text-xs font-semibold text-brand-green/70 bg-brand-gold/15 border border-brand-gold/30 rounded-full px-3 py-1">
+          <div className="hidden md:flex justify-end px-6 pt-4 -mb-1">
+            <span className="app-chip">
+              <span className="w-1.5 h-1.5 rounded-full bg-brand-gold" />
               {businessName}
             </span>
           </div>
@@ -557,13 +562,14 @@ export function AppShell({ children }: { children: ReactNode }) {
         {locked ? <LockedOverlayWrapper>{children}</LockedOverlayWrapper> : children}
       </main>
 
-      {/* Bottom nav mobile */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-brand-green border-t border-brand-green-dark grid grid-cols-6 z-50 pb-[env(safe-area-inset-bottom)]">
+      {/* Bottom nav mobile premium */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bottom-nav-premium grid grid-cols-6 z-50 pb-[env(safe-area-inset-bottom)]">
         {MOBILE_PRIMARY.map((n) => {
           const active = isActive(n.to);
           return (
-            <Link key={n.to} to={n.to} className={`flex flex-col items-center justify-center py-2.5 text-[10px] font-medium tracking-wide transition-colors ${active ? "text-brand-gold" : "text-brand-cream/70 active:text-brand-cream"}`}>
-              <span className={`w-1.5 h-1.5 rounded-full mb-1 transition-colors ${active ? "bg-brand-gold" : "bg-transparent"}`} />
+            <Link key={n.to} to={n.to} data-active={active ? "true" : "false"}
+              className="bottom-nav-item flex flex-col items-center justify-center py-2.5 text-[10px] font-semibold tracking-wide text-white/60 transition-colors">
+              <span className="indicator w-1.5 h-1.5 rounded-full mb-1 transition-all bg-transparent" />
               {n.short}
             </Link>
           );
@@ -742,12 +748,15 @@ function GlobalTrialBanner({ userId }: { userId: string }) {
 
 export function TopBar({ title, subtitle, right }: { title: string; subtitle?: string; right?: ReactNode }) {
   return (
-    <header className="bg-brand-green text-brand-cream px-5 md:px-8 pt-6 pb-5 md:rounded-b-2xl md:mt-4 md:mx-4 sticky md:static top-0 z-40 flex items-start justify-between gap-3">
-      <div>
-        <h1 className="font-display text-2xl md:text-3xl text-brand-gold">{title}</h1>
-        {subtitle && <p className="text-xs md:text-sm opacity-75 mt-0.5">{subtitle}</p>}
+    <header className="relative overflow-hidden bg-premium-hero text-brand-cream px-5 md:px-8 pt-8 pb-7 md:rounded-2xl md:mt-4 md:mx-4 sticky md:static top-0 z-40 flex items-start justify-between gap-3 shadow-[0_20px_40px_-24px_rgba(26,46,74,0.4),0_1px_0_rgba(255,255,255,0.06)_inset] border border-white/5">
+      <div className="pointer-events-none absolute inset-0 opacity-80">
+        <div className="absolute -top-10 right-0 h-40 w-40 rounded-full bg-brand-gold/20 blur-3xl" />
       </div>
-      {right && <div className="shrink-0">{right}</div>}
+      <div className="relative">
+        <h1 className="font-display text-3xl md:text-4xl text-brand-gold tracking-tight leading-none">{title}</h1>
+        {subtitle && <p className="text-[11px] md:text-xs opacity-70 mt-2 uppercase tracking-[0.14em] font-medium">{subtitle}</p>}
+      </div>
+      {right && <div className="relative shrink-0">{right}</div>}
     </header>
   );
 }
@@ -812,7 +821,7 @@ export function Fab({ onClick, label = "+" }: { onClick: () => void; label?: str
   return (
     <button onClick={onClick}
       style={{ bottom: "calc(5.5rem + env(safe-area-inset-bottom))" }}
-      className="fixed md:!bottom-8 right-4 md:right-8 w-14 h-14 rounded-full bg-brand-gold text-white text-3xl shadow-lg z-40 flex items-center justify-center font-light hover:scale-105 active:scale-95 transition-transform">
+      className="fab-premium fixed md:!bottom-8 right-4 md:right-8 w-16 h-16 rounded-full text-brand-green text-3xl z-40 flex items-center justify-center font-light hover:scale-[1.04] active:scale-95 transition-transform">
       {label}
     </button>
   );

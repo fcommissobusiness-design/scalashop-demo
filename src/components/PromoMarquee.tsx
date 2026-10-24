@@ -13,7 +13,7 @@ export function PromoMarquee() {
       role="button"
       tabIndex={0}
       onClick={(e) => e.preventDefault()}
-      className="w-full overflow-hidden bg-brand-gold text-brand-green border-b border-brand-gold/40 cursor-pointer select-none"
+      className="promo-marquee-premium w-full overflow-hidden cursor-pointer select-none"
       aria-label="Promozioni ScalaShop"
     >
       <style>{`
