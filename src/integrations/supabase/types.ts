@@ -80,6 +80,39 @@ export type Database = {
         }
         Relationships: []
       }
+      leads: {
+        Row: {
+          attivita: string | null
+          cognome: string | null
+          created_at: string | null
+          email: string | null
+          fonte: string | null
+          id: string
+          nome: string | null
+          telefono: string | null
+        }
+        Insert: {
+          attivita?: string | null
+          cognome?: string | null
+          created_at?: string | null
+          email?: string | null
+          fonte?: string | null
+          id?: string
+          nome?: string | null
+          telefono?: string | null
+        }
+        Update: {
+          attivita?: string | null
+          cognome?: string | null
+          created_at?: string | null
+          email?: string | null
+          fonte?: string | null
+          id?: string
+          nome?: string | null
+          telefono?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
