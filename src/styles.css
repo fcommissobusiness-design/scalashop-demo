@@ -35,19 +35,27 @@
 }
 
 :root {
-  /* ScalaShop demo palette: Navy + Orange + White */
+  /* ScalaShop demo palette: Navy + Orange + White (brand-locked) */
   --brand-green: #1A2E4A;
   --brand-green-dark: #0F1D33;
+  --brand-green-900: #0A1322;
+  --brand-green-800: #152541;
+  --brand-green-700: #1A2E4A;
+  --brand-green-600: #26406A;
   --brand-gold: #F5A623;
+  --brand-gold-600: #E89214;
+  --brand-gold-300: #FFCB6E;
   --brand-cream: #FFFFFF;
+  --brand-paper: #FBF8F2;
+  --brand-paper-2: #F6F2EA;
   --brand-white: #FFFFFF;
-  --background: #FFFFFF;
+  --background: #FBF8F2;
   --foreground: #1A2E4A;
   --card: #FFFFFF;
   --card-foreground: #1A2E4A;
-  --muted: #F4F6FA;
+  --muted: #F0ECE2;
   --muted-foreground: #5A6B82;
-  --border: #E2E8F0;
+  --border: #E7E0CF;
   --success: #1F8A52;
   --warning: #F5A623;
   --danger: #C0392B;
@@ -125,3 +133,193 @@
     background-clip: content-box;
   }
 }
+
+/* ============================================================
+   PREMIUM DESIGN LAYER - APP (gestionale)
+   Elevazioni soft, backgrounds raffinati, metric card premium,
+   sidebar/topbar/bottom nav lifted.
+   ============================================================ */
+
+/* ---- Backgrounds raffinati ---- */
+.bg-premium-hero {
+  background-color: var(--brand-green-900);
+  background-image:
+    radial-gradient(1000px 500px at 85% -20%, rgba(245,166,35,0.18), transparent 55%),
+    radial-gradient(800px 500px at -10% 30%, rgba(38,64,106,0.55), transparent 55%),
+    linear-gradient(180deg, var(--brand-green-800) 0%, var(--brand-green-900) 100%);
+}
+.bg-paper {
+  background-color: var(--brand-paper);
+  background-image:
+    radial-gradient(900px 400px at 100% 0%, rgba(245,166,35,0.04), transparent 55%),
+    radial-gradient(800px 400px at 0% 100%, rgba(26,46,74,0.04), transparent 55%);
+}
+.bg-sidebar-premium {
+  background-color: var(--brand-green-900);
+  background-image:
+    radial-gradient(500px 400px at 50% -5%, rgba(245,166,35,0.14), transparent 60%),
+    radial-gradient(400px 500px at 50% 100%, rgba(38,64,106,0.5), transparent 60%),
+    linear-gradient(180deg, var(--brand-green-800) 0%, var(--brand-green-900) 100%);
+}
+
+/* ---- KPI card premium ---- */
+.kpi-card {
+  position: relative;
+  background: #fff;
+  border: 1px solid rgba(26,46,74,0.08);
+  border-radius: 18px;
+  padding: 1.1rem 1.2rem;
+  box-shadow: 0 1px 2px rgba(26,46,74,0.04), 0 10px 24px -16px rgba(26,46,74,0.12);
+  transition: transform 0.2s ease, box-shadow 0.25s ease, border-color 0.2s ease;
+  overflow: hidden;
+}
+.kpi-card::before {
+  content: "";
+  position: absolute; left: 0; right: 0; top: 0; height: 2px;
+  background: linear-gradient(90deg, rgba(245,166,35,0.0), rgba(245,166,35,0.5), rgba(245,166,35,0.0));
+  opacity: 0; transition: opacity 0.3s ease;
+}
+.kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 4px rgba(26,46,74,0.06), 0 20px 36px -20px rgba(26,46,74,0.2);
+  border-color: rgba(245,166,35,0.25);
+}
+.kpi-card:hover::before { opacity: 1; }
+
+.kpi-card-highlight {
+  background: var(--brand-green-900);
+  background-image:
+    radial-gradient(600px 300px at 100% 0%, rgba(245,166,35,0.22), transparent 60%),
+    linear-gradient(135deg, var(--brand-green-800) 0%, var(--brand-green-900) 100%);
+  color: #fff;
+  border: 1px solid rgba(245,166,35,0.25);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.08) inset,
+    0 10px 30px -10px rgba(26,46,74,0.35),
+    0 20px 40px -25px rgba(245,166,35,0.3);
+}
+.kpi-card-highlight::before { opacity: 0.8; }
+
+/* ---- Section eyebrow + display heading ---- */
+.app-eyebrow {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+/* ---- Primary button premium (orange) ---- */
+.app-btn-primary {
+  position: relative;
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+  font-weight: 600;
+  color: var(--brand-green);
+  background: linear-gradient(180deg, #FFCB6E 0%, var(--brand-gold) 48%, var(--brand-gold-600) 100%);
+  border: 1px solid rgba(26,46,74,0.08);
+  border-radius: 12px;
+  padding: 0.7rem 1.1rem;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.5) inset,
+    0 -2px 0 rgba(26,46,74,0.08) inset,
+    0 8px 18px -8px rgba(245,166,35,0.5);
+  transition: transform 0.15s ease, filter 0.2s ease;
+}
+.app-btn-primary:hover { transform: translateY(-1px); filter: brightness(1.03); }
+
+/* ---- Dark button (navy) ---- */
+.app-btn-dark {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+  font-weight: 600;
+  color: #fff;
+  background: linear-gradient(180deg, var(--brand-green-700) 0%, var(--brand-green-800) 100%);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  padding: 0.7rem 1.1rem;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.06) inset, 0 8px 18px -10px rgba(26,46,74,0.4);
+  transition: transform 0.15s ease, filter 0.2s ease;
+}
+.app-btn-dark:hover { transform: translateY(-1px); filter: brightness(1.08); }
+
+/* ---- Nav link raffinato (sidebar) ---- */
+.nav-link {
+  position: relative;
+  display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;
+  padding: 0.55rem 0.9rem;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: rgba(255,255,255,0.72);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+.nav-link:hover { color: #fff; background: rgba(255,255,255,0.05); }
+.nav-link[data-active="true"] {
+  background: linear-gradient(90deg, rgba(245,166,35,0.18), rgba(245,166,35,0.08));
+  color: var(--brand-gold);
+}
+.nav-link[data-active="true"]::before {
+  content: "";
+  position: absolute; left: -4px; top: 20%; bottom: 20%; width: 3px;
+  background: var(--brand-gold);
+  border-radius: 2px;
+  box-shadow: 0 0 10px rgba(245,166,35,0.5);
+}
+
+/* ---- Chip (eyebrow pill) ---- */
+.app-chip {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  padding: 0.3rem 0.65rem;
+  border-radius: 9999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: rgba(245,166,35,0.12);
+  color: var(--brand-gold-600);
+  border: 1px solid rgba(245,166,35,0.3);
+}
+.app-chip-dark {
+  background: rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.9);
+  border-color: rgba(255,255,255,0.14);
+  backdrop-filter: blur(6px);
+}
+
+/* ---- Fab (il "+" fluttuante) ---- */
+.fab-premium {
+  background: linear-gradient(180deg, #FFCB6E 0%, var(--brand-gold) 50%, var(--brand-gold-600) 100%) !important;
+  border: 1px solid rgba(26,46,74,0.12) !important;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.5) inset,
+    0 12px 30px -8px rgba(245,166,35,0.6),
+    0 4px 10px rgba(26,46,74,0.12) !important;
+}
+
+/* ---- Bottom nav mobile raffinato ---- */
+.bottom-nav-premium {
+  background: linear-gradient(180deg, var(--brand-green-800), var(--brand-green-900));
+  box-shadow: 0 -8px 24px -8px rgba(0,0,0,0.3);
+  backdrop-filter: blur(14px);
+}
+.bottom-nav-item[data-active="true"] {
+  color: var(--brand-gold);
+}
+.bottom-nav-item[data-active="true"] .indicator {
+  background: var(--brand-gold);
+  box-shadow: 0 0 10px rgba(245,166,35,0.6);
+}
+
+/* ---- Promo bar più leggera ---- */
+.promo-marquee-premium {
+  background: linear-gradient(90deg, rgba(245,166,35,0.1), rgba(245,166,35,0.18), rgba(245,166,35,0.1));
+  color: var(--brand-green);
+  border-bottom: 1px solid rgba(245,166,35,0.25);
+}
+
+/* ---- Divider ornamentale ---- */
+.rule-ornament {
+  position: relative;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(26,46,74,0.14), transparent);
+}
+
