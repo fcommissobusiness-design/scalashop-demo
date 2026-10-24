@@ -338,10 +338,13 @@ function Quick({ onClick, label }: { onClick: () => void; label: string }) {
 
 function Kpi({ label, value, sub, danger, highlight, to }: { label: string; value: string; sub?: string; danger?: boolean; highlight?: boolean; to?: any }) {
   const inner = (
-    <div className={`rounded-xl p-4 shadow-sm ${highlight ? "bg-brand-green text-brand-cream" : "bg-card"}`}>
-      <p className={`text-[11px] uppercase tracking-wide ${highlight ? "text-brand-gold" : "text-muted-foreground"}`}>{label}</p>
-      <p className={`font-display text-2xl mt-1 ${danger ? "text-danger" : highlight ? "text-brand-gold" : "text-brand-green"}`}>{value}</p>
-      {sub && <p className={`text-[11px] mt-0.5 ${highlight ? "text-brand-cream/70" : "text-muted-foreground"}`}>{sub}</p>}
+    <div className={highlight ? "kpi-card kpi-card-highlight" : "kpi-card"}>
+      <div className="flex items-start justify-between gap-2">
+        <p className={`app-eyebrow text-[0.68rem] ${highlight ? "text-brand-gold" : ""}`}>{label}</p>
+        <span className={`h-7 w-7 rounded-lg flex items-center justify-center text-[10px] font-bold ${highlight ? "bg-brand-gold/20 text-brand-gold border border-brand-gold/30" : "bg-brand-gold/10 text-brand-gold-600 border border-brand-gold/20"}`}>€</span>
+      </div>
+      <p className={`font-display text-[2rem] md:text-[2.25rem] leading-none mt-3 tracking-tight ${danger ? "text-danger" : highlight ? "text-brand-gold" : "text-brand-green"}`}>{value}</p>
+      {sub && <p className={`text-[11px] mt-2 font-medium ${highlight ? "text-brand-cream/70" : "text-muted-foreground"}`}>{sub}</p>}
     </div>
   );
   if (to) return <Link to={to.to} search={to.search} className="block">{inner}</Link>;
